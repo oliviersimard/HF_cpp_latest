@@ -37,10 +37,15 @@ class FunctorBuildGk{
         double epsk1D(double);
         std::complex<double> w(int,double,int);
         std::complex<double> q(int, int);
+        arma::Mat< std::complex<double> >& swap(arma::Mat< std::complex<double> >&);
 
         arma::Mat< std::complex<double> > buildGkAA_2D(int,double,int,double,double,double,double);
         arma::Mat< std::complex<double> > buildGkAA_1D(int,double,int,double,double,double);
         arma::Mat< std::complex<double> > buildGkAA_1D_w(std::complex<double>,double,double,double,double);
+        arma::Mat< std::complex<double> > buildGkBB_1D(int,double,int,double,double,double);
+        arma::Mat< std::complex<double> > buildGkBB_1D_w(std::complex<double>,double,double,double,double);
+
+        double get_ndo();
 
     private:
         double _mu, _u, _ndo;

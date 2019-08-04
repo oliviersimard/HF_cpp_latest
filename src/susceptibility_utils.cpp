@@ -61,7 +61,7 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
 
 std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
     std::ofstream output;
-    std::string strOutput("ktilde_kbar_U"+std::to_string(Gk._u)+"_beta"+std::to_string(Gk._beta)+"_ndo"+std::to_string(Gk._ndo)+"_Nk"+std::to_string(Gk._Nk)+"_Nw"+std::to_string(Gk._size)+".dat");
+    std::string strOutput("ktilde_kbar_U"+std::to_string(Gk._u)+"_beta"+std::to_string(Gk._beta)+"_ndo"+std::to_string(Gk._ndo)+"_Nk"+std::to_string(Gk._Nk)+"_Nw"+std::to_string(Gk._size)+"__AA.dat");
     std::complex<double> upper_level=0.0+0.0*im;
     for (size_t ktilde=0; ktilde<Gk._kArr_l.size(); ktilde++){
         std::cout << "ktilde: " << ktilde << std::endl;
@@ -85,7 +85,7 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
                 
             }
             output.open(strOutput, std::ofstream::out | std::ofstream::app);
-            output << abs(tmp_val_kbar) << " ";
+            output << tmp_val_kbar << " ";
             output.close();
         }
         output.open(strOutput, std::ofstream::out | std::ofstream::app);

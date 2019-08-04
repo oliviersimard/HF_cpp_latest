@@ -3,4 +3,6 @@ test
 obj
 *.dat
 hartree2DSure.cpp
-
+*.png
+*.vscode
+*.py
