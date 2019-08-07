@@ -99,3 +99,31 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
     output.close();
     return upper_level;
 }
+
+std::complex<double> Susceptibility::chisp(Hubbard::FunctorBuildGk& Gk, Hubbard::K_1D q) const{
+    std::complex<double> xi=0.0+0.0*im, suscept(0.0,0.0);
+    for (int ikn=0; ikn<Gk._size; ikn++){
+        for (size_t k=0; k<Gk._kArr.size(); k++){
+            xi += Gk(Gk._precomp_wn[ikn]+q._iwn,Gk._kArr[k]+q._qx)(0,0)*Gk(Gk._precomp_wn[ikn],Gk._kArr[k])(0,0);
+        }
+    }
+    xi *= 1.0/(Gk._beta*Gk._Nk); /// Removed minus sign
+    suscept = xi/(1.0-Gk._u/2*xi);
+
+    return suscept;
+}
+
+std::complex<double> Susceptibility::chisp(Hubbard::FunctorBuildGk& Gk, Hubbard::K_2D q) const{
+    std::complex<double> xi=0.0+0.0*im, suscept(0.0,0.0);
+    for (int ikn=0; ikn<Gk._size; ikn++){
+        for (size_t kx=0; kx<Gk._kArr.size(); kx++){
+            for (size_t ky=0; ky<Gk._kArr.size(); ky++){
+                xi += Gk(Gk._precomp_wn[ikn]+q._iwn,Gk._kArr[kx]+q._qx,Gk._kArr[ky]+q._qy)(0,0)*Gk(Gk._precomp_wn[ikn],Gk._kArr[kx],Gk._kArr[ky])(0,0);
+            }
+        }
+    }
+    xi *= 1.0/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign
+    suscept = xi/(1.0-Gk._u/2*xi);
+
+    return suscept;
+}

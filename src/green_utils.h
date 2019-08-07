@@ -14,6 +14,7 @@ const arma::Mat< std::complex<double> > ZEROS_(2, 2, arma::fill::zeros);
 static arma::Mat< std::complex<double> > statMat(2,2);
 
 class Susceptibility; // class Susceptibility is member of the global scope.
+class FFT; // class FFT is member of the global scope.
 namespace Hubbard { class FunctorBuildGk; } // Have to forward declare class in namespace to be able to overload operator<<.
 std::ostream& operator<<(std::ostream& os, const Hubbard::FunctorBuildGk& obj);
 
@@ -22,6 +23,7 @@ namespace Hubbard{
 class FunctorBuildGk{
     friend std::ostream& ::operator<<(std::ostream& os, const FunctorBuildGk& obj);
     friend class ::Susceptibility;
+    friend class ::FFT;
     public:
         FunctorBuildGk(double,int,double,double,std::vector<double>,std::vector<double>,int,int,std::vector< std::complex<double> >&);
         ~FunctorBuildGk()=default;
@@ -40,6 +42,7 @@ class FunctorBuildGk{
         arma::Mat< std::complex<double> >& swap(arma::Mat< std::complex<double> >&);
 
         arma::Mat< std::complex<double> > buildGkAA_2D(int,double,int,double,double,double,double);
+        arma::Mat< std::complex<double> > buildGkAA_2D_w(std::complex<double>,double,double,double,double,double);
         arma::Mat< std::complex<double> > buildGkAA_1D(int,double,int,double,double,double);
         arma::Mat< std::complex<double> > buildGkAA_1D_w(std::complex<double>,double,double,double,double);
         arma::Mat< std::complex<double> > buildGkBB_1D(int,double,int,double,double,double);
