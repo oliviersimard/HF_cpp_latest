@@ -18,6 +18,23 @@ _mu(mu), _u(u), _ndo(ndo), _beta(beta), _Nit(Nit), _Nk(Nk), _kArr(kArr), _kArr_l
     }
 }
 
+FunctorBuildGk::FunctorBuildGk(MembCarrier* MembCarrierObj,double mu,double ndo,std::vector<double> kArr,std::vector<double> kArr_l,std::vector< std::complex<double> >& Gup_k) : 
+_mu(mu), _ndo(ndo), _kArr(kArr), _kArr_l(kArr_l){
+    // Initialization from MembCarrier object.
+    this->_u=(MembCarrierObj->db_ptr)[0];
+    this->_beta=(MembCarrierObj->db_ptr)[2];
+    this->_Nit=(MembCarrierObj->int_ptr)[1];
+    this->_Nk=(MembCarrierObj->int_ptr)[3];
+    // Basically same thing as other constructor.
+    this->_Gup_k = &Gup_k.front(); 
+    this->_size = Gup_k.size();
+    for (int j=0; j<_size; j++){
+        this->_precomp_wn.push_back(w(j,0.0,_beta));
+        this->_precomp_qn.push_back(q(j,_beta));
+    }
+    
+}
+
 arma::Mat< std::complex<double> > FunctorBuildGk::operator()(int j, double kx, double ky){
     return buildGkAA_2D(j,_mu,_beta,_u,_ndo,kx,ky);
 }

@@ -5,8 +5,7 @@
 #include<complex>
 #include<vector>
 #include<armadillo>
-
-#define VERBOSE 0
+#include "json_utils.h"
 
 const std::complex<double> im(0.0,1.0);
 const arma::Mat< std::complex<double> > II_(2, 2, arma::fill::eye);
@@ -26,6 +25,7 @@ class FunctorBuildGk{
     friend class ::FFT;
     public:
         FunctorBuildGk(double,int,double,double,std::vector<double>,std::vector<double>,int,int,std::vector< std::complex<double> >&);
+        FunctorBuildGk(::MembCarrier* MemObj,double mu,double ndo,std::vector<double> kArr,std::vector<double> kArr_l,std::vector< std::complex<double> >& Gup_k);
         ~FunctorBuildGk()=default;
         
         arma::Mat< std::complex<double> > operator()(int, double, double);

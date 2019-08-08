@@ -10,3 +10,4 @@ hartree2DSure.cpp
 *.py
 !T_vs_U_sus.py
 !colormap.py
+build

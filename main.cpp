@@ -7,12 +7,17 @@ using namespace std;
 
 int main(int argc, char** argv){
 
-    int Nomega=400;
-    int Nk=200;
-	double beta_init=5.0,beta_step=5.0,beta_max=100.0;
-    double u_init=0.0,u_step=0.1,u_max=8.0;
+    string filename("params.json");
+    Json_utils JsonObj;
+    MembCarrier params = JsonObj.JSONLoading(filename); // Loading file content into container.
+
+    int Nomega=*(params.int_ptr);
+    int Nk=*(params.int_ptr+3);
+	double beta_init=*(params.db_ptr+8),beta_step=*(params.db_ptr+7),beta_max=*(params.db_ptr+6);
+    double u_init=*(params.db_ptr+2),u_step=*(params.db_ptr+1),u_max=*(params.db_ptr);
+
     double ndo_initial=0.6;
-    int Niterations=100;
+    int Niterations=*(params.int_ptr+1);
     double mu=0.0;
     double ndo;
     vector< complex<double> > Gup_k(Nomega,0.0);
@@ -27,7 +32,6 @@ int main(int argc, char** argv){
     #ifdef ONED
     string fileOutput("TvsU_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
     string fileOutputGtau("Gtau_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
-    string fileOutputChi("Chispsp_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
     #else
     string fileOutput("TvsU_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
     string fileOutputGtau("Gtau_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
@@ -36,25 +40,44 @@ int main(int argc, char** argv){
     ofstream outputFile;
     ofstream outputFileGtau;
     ofstream outputFileChi;
+    ofstream outputFileChi0;
     for (double beta=beta_init; beta<=beta_max; beta+=beta_step){
-        
+
+        string fileOutputChi("Chisp_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+        string fileOutputChi0("Chi0_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
         for (double u=u_init; u<=u_max; u+=u_step) {
             mu=u/2.;
             ndo=ndo_initial;
             std::vector<double> Gtau;
             Hubbard::FunctorBuildGk u_ndo_c(mu,beta,u,ndo,kArr,kArr_l,Niterations,Nk,Gup_k);
             #ifdef ONED
-            complex<double> testSup;
+            complex<double> Suscep, Suscep0;
             if (VERBOSE > 0) cout << "First 1D: " << u_ndo_c << endl;
             /* Getting the selfconsistency part done. */
             u_ndo_c.get_ndo_1D();
             /* Printing result after selfconsistency. */
             cout << "After 1D: " << u_ndo_c << endl;
             /* Computing ladder susceptibility diagram. */
-            //testSup = susObj.chisp(u_ndo_c,Hubbard::K_1D(0.0,0.0+0.0*im));
-            testSup = susObj.chisp(u_ndo_c,Hubbard::K_1D(0.0,0.0+0.0*im));
-            cout << "test susceptibility: " << testSup << endl;
-
+            for (int k=0; k<=Nk; k++){
+                Suscep = susObj.chisp(u_ndo_c,Hubbard::K_1D(kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
+                Suscep0 = susObj.chi0(u_ndo_c,Hubbard::K_1D(kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
+                /* Saving imaginary part of the susceptibility */
+                outputFileChi.open(fileOutputChi, ofstream::out | ofstream::app);
+                outputFileChi << Suscep.imag() << " ";
+                outputFileChi.close();
+                // cout << "susceptibility at k: " << kArr_l[k] << " is " << Suscep << endl;
+                outputFileChi0.open(fileOutputChi0, ofstream::out | ofstream::app);
+                outputFileChi0 << Suscep0 << " ";
+                outputFileChi0.close();
+            }
+            cout << "susceptibility: " << Suscep << endl;
+            outputFileChi.open(fileOutputChi, ofstream::out | ofstream::app);
+            outputFileChi << "\n";
+            outputFileChi.close();
+            outputFileChi0.open(fileOutputChi0, ofstream::out | ofstream::app);
+            outputFileChi0 << "\n";
+            outputFileChi0.close();
+    
             /* Getting G(\tau) for each value */
             Gtau = fftObj.get_gtau1D(u_ndo_c);
             outputFileGtau.open(fileOutputGtau, ofstream::out | ofstream::app);
@@ -63,11 +86,6 @@ int main(int argc, char** argv){
             }
             outputFileGtau << "\n";
             outputFileGtau.close();
-
-            /* Saving imaginary part of the susceptibility */
-            outputFileChi.open(fileOutputChi, ofstream::out | ofstream::app);
-            outputFileChi << testSup.imag() << " ";
-            outputFileChi.close();
             #else
             complex<double> testSup;
             if (VERBOSE > 0) cout << "First 2D: " << u_ndo_c << endl;
@@ -75,7 +93,7 @@ int main(int argc, char** argv){
             cout << "After 2D: " << u_ndo_c << endl;
 
             /* Computing the 2D susceptibility */
-            testSup = susObj.chisp(u_ndo_c,Hubbard::K_2D(0.0,0.0,0.0+0.0*im));
+            testSup = susObj.chisp(u_ndo_c,Hubbard::K_2D(M_PI,M_PI,0.0+0.0*im));
             cout << "test susceptibility: " << testSup << endl;
 
             /* Getting G(\tau) for each value */
@@ -100,10 +118,6 @@ int main(int argc, char** argv){
         outputFile.open(fileOutput, ofstream::out | ofstream::app);
         outputFile << "\n";
         outputFile.close();
-
-        outputFileChi.open(fileOutputChi, ofstream::out | ofstream::app);
-        outputFileChi << "\n";
-        outputFileChi.close();
     }
 
     return 0;
