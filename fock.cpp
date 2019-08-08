@@ -5,7 +5,7 @@
 #include <string>
 #include <armadillo>
 
-const int _Nomega=100,_Niterations=100,_Nk=100;
+const int _Nomega=100,_Niterations=200,_Nk=100;
 
 typedef arma::Mat< std::complex<double> > arma_t;
 
@@ -26,6 +26,7 @@ class HubbardExt{
         void Sdo_kBB(int,int);
         std::complex<double> w(int);
         double get_nAA();
+        double get_double_occupancy_AA();
     private:
         double _u,_v,_beta,_mu;
         std::vector<double> _kArr;
@@ -39,15 +40,19 @@ class HubbardExt{
 
 int main(int argc, char ** argv){
  
-	double u,beta,n;
-    double v=1.0;
+	double n,d;
+    double beta_init=5.0, beta_step=5.0, beta_max=100.0;
+    double u_init=2.0, u_step=0.2, u_max=4.0;
+    double v=0.5;
     double mu=0.0;
   
     std::ofstream output;
-    std::string strOutput("beta_5.0_100.0_5.0_vs_u_1.0_3.0_0.1_v_1.0_Fock.dat");
-    for (beta=5.0; beta<=100.0; beta+=5.0){
+    std::ofstream outputDO;
+    std::string strOutput("T_vs_U_beta_"+std::to_string(beta_init)+"_"+std::to_string(beta_max)+"_"+std::to_string(beta_step)+"_vs_u_"+std::to_string(u_init)+"_"+std::to_string(u_max)+"_"+std::to_string(u_step)+"_v_"+std::to_string(v)+"_Nk_"+std::to_string(_Nk)+"_Nomega_"+std::to_string(_Nomega)+"_Nit_"+std::to_string(_Niterations)+"_Fock.dat");
+    std::string strOutputDO("DO_beta_"+std::to_string(beta_init)+"_"+std::to_string(beta_max)+"_"+std::to_string(beta_step)+"_vs_u_"+std::to_string(u_init)+"_"+std::to_string(u_max)+"_"+std::to_string(u_step)+"_v_"+std::to_string(v)+"_Nk_"+std::to_string(_Nk)+"_Nomega_"+std::to_string(_Nomega)+"_Nit_"+std::to_string(_Niterations)+"_Fock.dat");
+    for (double beta=beta_init; beta<=beta_max; beta+=beta_step){
         
-        for (u=1.0; u<=3.0; u+=0.1) {
+        for (double u=u_init; u<=u_max; u+=u_step) {
             mu=u/2.0+2.0*v; // chemical potential in the 1D case for the extended Hubbard model.
 
             HubbardExt hubbardExtObj(u,v,beta,mu,_Nomega,_Niterations,_Nk);
@@ -74,15 +79,25 @@ int main(int argc, char ** argv){
                 }
                 std::cout << "it: " << i << std::endl;
                 n = hubbardExtObj.get_nAA();
+                d = hubbardExtObj.get_double_occupancy_AA();
+                std::cout << "d: " << d << std::endl;
             }
             output.open(strOutput, std::ofstream::out | std::ofstream::app);
             output << n << " ";
             output.close();
+
+            outputDO.open(strOutputDO, std::ofstream::out | std::ofstream::app);
+            outputDO << d << " ";
+            outputDO.close();
         }
         std::cout << "\n";
         output.open(strOutput, std::ofstream::out | std::ofstream::app);
         output << "\n";
         output.close();
+
+        outputDO.open(strOutputDO, std::ofstream::out | std::ofstream::app);
+        outputDO << " ";
+        outputDO.close();
     }
   return 0;
 }
@@ -178,18 +193,21 @@ void HubbardExt::Sdo_kBB(int k, int kn){
 // Once all the self-energies of one iteration have been calculated, build the new Green's functions out of the latter.
 
 double HubbardExt::get_nAA(){
-    std::vector< std::complex<double> > Gk(_Nomega);
     double n=0.0;
     for (int j=0; j<_Nomega; j++){
         std::complex<double> n_k(0.0,0.0);
         std::complex<double> wj = w(j);
         for (int k=0; k<_kArr.size(); k++){ // Summing over G(k)
             double epsk = -2.0*cos(_kArr[k]);
-            n_k += 1.0/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+            if ( (k==0) || (k==_Nk) ){
+                n_k += 0.5/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+            }
+            else{
+                n_k += 1.0/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+            }
         }
         n_k /= (_Nk);
-        Gk[j] = n_k;
-        n += (2.0/_beta)*( Gk[j] - 1.0/wj ).real();
+        n += (2.0/_beta)*( n_k - 1.0/wj ).real();
     }
     n -= 0.5;
     n *= -1.0;
@@ -197,6 +215,31 @@ double HubbardExt::get_nAA(){
     std::cout << "beta: " << _beta << " u: " << _u << " v: " << _v << " n: " << n << std::endl;
 
     return n;
+}
+
+
+
+double HubbardExt::get_double_occupancy_AA(){
+/* This function computes U<n_{up}n_{down}> = 1/(\beta*V)*\sum_{k,ikn} \Sigma(k,ikn)G(k,ikn)e^{-ikn0^-} */
+    double d=0.0;
+    for (int j=0; j<_Nomega; j++){
+        std::complex<double> d_k(0.0,0.0);
+        std::complex<double> wj = w(j);
+        for (int k=0; k<_kArr.size(); k++){ // Summing over G(k)
+            double epsk = -2.0*cos(_kArr[k]);
+            if ( (k==0) || (k==_Nk) ){
+                d_k += *(_S_vec_ptr[0] + j*_Nk + k)*0.5/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+            }
+            else{
+                d_k += *(_S_vec_ptr[0] + j*_Nk + k)*1.0/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+            }
+        }
+        d_k /= (_Nk);
+        d += (2.0/_beta)*( d_k ).real();
+    }
+    d *= -1.0;
+
+    return d;
 }
 
 std::complex<double> HubbardExt::w(int j){
