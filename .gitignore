@@ -11,3 +11,5 @@ hartree2DSure.cpp
 !T_vs_U_sus.py
 !colormap.py
 build
+data
+*.pdf

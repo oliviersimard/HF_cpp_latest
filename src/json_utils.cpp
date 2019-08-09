@@ -13,12 +13,12 @@ const std::streampos Json_utils::getSize(const std::string& filename){
     return end-begin;
 }
 
-const json_spirit::mValue& Json_utils::get_object_item(const json_spirit::mValue& element, const std::string& name){
+inline const json_spirit::mValue& Json_utils::get_object_item(const json_spirit::mValue& element, const std::string& name){
 
     return element.get_obj().at(name);
 }
 
-const json_spirit::mValue& Json_utils::get_array_item(const json_spirit::mValue& element, size_t index){
+inline const json_spirit::mValue& Json_utils::get_array_item(const json_spirit::mValue& element, size_t index){
 
     return element.get_array().at(index);
 }

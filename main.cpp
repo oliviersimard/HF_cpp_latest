@@ -1,5 +1,8 @@
 #include "src/susceptibility_utils.h"
 #include <iomanip>
+#include <sys/stat.h>
+
+inline bool file_exists(const std::string&);
 
 using namespace std;
 
@@ -30,23 +33,32 @@ int main(int argc, char** argv){
     }
 
     #ifdef ONED
-    string fileOutput("TvsU_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
-    string fileOutputGtau("Gtau_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+    string fileOutput("data/TvsU_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+    string fileOutputGtau("data/Gtau_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
     #else
-    string fileOutput("TvsU_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
-    string fileOutputGtau("Gtau_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
-    string fileOutputChi("Chisp_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+    string fileOutput("data/TvsU_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+    string fileOutputGtau("data/Gtau_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+    string fileOutputChi("data/Chisp_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
     #endif
+    // Testing if the files already exist.
+    if (file_exists(fileOutput)){
+        cout << "file: " << fileOutput << " already exists!" << endl;
+        exit(0);
+    }
+    if (file_exists(fileOutputGtau)){
+        cout << "file: " << fileOutputGtau << " already exists!" << endl;
+        exit(0);
+    }
     ofstream outputFile;
     ofstream outputFileGtau;
     ofstream outputFileChi;
     ofstream outputFileChi0;
     for (double beta=beta_init; beta<=beta_max; beta+=beta_step){
 
-        string fileOutputChi("Chisp_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
-        string fileOutputChi0("Chi0_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+        string fileOutputChi("data/Chisp_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+        string fileOutputChi0("data/Chi0_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
         for (double u=u_init; u<=u_max; u+=u_step) {
-            mu=u/2.;
+            mu=u/2.0;
             ndo=ndo_initial;
             std::vector<double> Gtau;
             Hubbard::FunctorBuildGk u_ndo_c(mu,beta,u,ndo,kArr,kArr_l,Niterations,Nk,Gup_k);
@@ -63,11 +75,11 @@ int main(int argc, char** argv){
                 Suscep0 = susObj.chi0(u_ndo_c,Hubbard::K_1D(kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
                 /* Saving imaginary part of the susceptibility */
                 outputFileChi.open(fileOutputChi, ofstream::out | ofstream::app);
-                outputFileChi << Suscep.imag() << " ";
+                outputFileChi << 1.0*Suscep.imag() << " ";
                 outputFileChi.close();
                 // cout << "susceptibility at k: " << kArr_l[k] << " is " << Suscep << endl;
                 outputFileChi0.open(fileOutputChi0, ofstream::out | ofstream::app);
-                outputFileChi0 << Suscep0 << " ";
+                outputFileChi0 << Suscep0.imag() << " ";
                 outputFileChi0.close();
             }
             cout << "susceptibility: " << Suscep << endl;
@@ -121,4 +133,10 @@ int main(int argc, char** argv){
     }
 
     return 0;
+}
+
+
+inline bool file_exists (const std::string& filename) {
+  struct stat buffer;   
+  return (stat(filename.c_str(), &buffer) == 0); 
 }

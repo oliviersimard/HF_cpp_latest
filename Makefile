@@ -1,7 +1,7 @@
 SRC=$(PWD)/src
 OBJ=$(PWD)/obj
 
-CXX=g++ -std=c++11 -Wall #-DONED
+CXX=g++ -std=c++14 -Wall #-DONED
 INC=${HOME}/include
 LIB=${HOME}/lib
 CXXFLAGS= -L$(LIB) -larmadillo -lfftw3 -ljson_spirit

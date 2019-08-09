@@ -7,7 +7,7 @@
 #include<armadillo>
 #include "json_utils.h"
 
-const std::complex<double> im(0.0,1.0);
+const std::complex<double> im(0.0,1.0); // Maybe avoid so many const declaration to speed up code.
 const arma::Mat< std::complex<double> > II_(2, 2, arma::fill::eye);
 const arma::Mat< std::complex<double> > ZEROS_(2, 2, arma::fill::zeros);
 static arma::Mat< std::complex<double> > statMat(2,2);
@@ -31,9 +31,13 @@ class FunctorBuildGk{
         arma::Mat< std::complex<double> > operator()(int, double, double);
         void get_ndo_2D();
         arma::Mat< std::complex<double> > operator()(std::complex<double>, double, double);
-        arma::Mat< std::complex<double> > operator()(int, double);
+        inline arma::Mat< std::complex<double> > operator()(int j, double kx){
+            return buildGkAA_1D(j,_mu,_beta,_u,_ndo,kx);
+        } // This inline function is called in other translation units!
         void get_ndo_1D();
-        arma::Mat< std::complex<double> > operator()(std::complex<double>, double);
+        inline arma::Mat< std::complex<double> > operator()(std::complex<double> w, double kx){
+            return buildGkAA_1D_w(w,_mu,_u,_ndo,kx);
+        } // This inline functions are called in other translation units!
 
         double epsk2D(double,double);
         double epsk1D(double);
@@ -48,7 +52,9 @@ class FunctorBuildGk{
         arma::Mat< std::complex<double> > buildGkBB_1D(int,double,int,double,double,double);
         arma::Mat< std::complex<double> > buildGkBB_1D_w(std::complex<double>,double,double,double,double);
 
-        double get_ndo();
+        inline double get_ndo(){
+            return this->_ndo;
+        } // Called in main.
 
     private:
         double _mu, _u, _ndo;

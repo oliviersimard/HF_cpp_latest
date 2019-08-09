@@ -43,20 +43,20 @@ arma::Mat< std::complex<double> > FunctorBuildGk::operator()(std::complex<double
     return buildGkAA_2D_w(w,_mu,_u,_ndo,kx,ky);
 }
 
-arma::Mat< std::complex<double> > FunctorBuildGk::operator()(int j, double kx){
-    return buildGkAA_1D(j,_mu,_beta,_u,_ndo,kx); // Modified here to BB
-}
-
-arma::Mat< std::complex<double> > FunctorBuildGk::operator()(std::complex<double> w, double kx){
-    return buildGkAA_1D_w(w,_mu,_u,_ndo,kx);  // Modified here to BB
-}
-
-double FunctorBuildGk::epsk2D(double kx, double ky){
+inline double FunctorBuildGk::epsk2D(double kx, double ky){
     return -2.0*(cos(kx)+cos(ky));
 }
 
-double FunctorBuildGk::epsk1D(double kx){
+inline double FunctorBuildGk::epsk1D(double kx){
     return -2.0*cos(kx);
+}
+
+inline std::complex<double> FunctorBuildGk::w(int n, double mu, int beta){
+    return std::complex<double>(0.0,1.0)*(2.0*(double)n+1.0)*M_PI/(double)beta + mu;
+}
+
+inline std::complex<double> FunctorBuildGk::q(int n, int beta){
+    return std::complex<double>(0.0,1.0)*(2.0*(double)n)*M_PI/(double)beta;
 }
 
 arma::Mat< std::complex<double> > FunctorBuildGk::buildGkAA_2D(int j, double mu, int beta, double u, double ndo, double kx, double ky){
@@ -99,14 +99,6 @@ arma::Mat< std::complex<double> > FunctorBuildGk::buildGkBB_1D_w(std::complex<do
     tmp_mat = buildGkAA_1D_w(w, mu, u, ndo, kx);
     swap(tmp_mat);
     return tmp_mat;
-}
-
-std::complex<double> FunctorBuildGk::w(int n, double mu, int beta){
-    return im*(2.0*(double)n+1.0)*M_PI/(double)beta + mu;
-}
-
-std::complex<double> FunctorBuildGk::q(int n, int beta){
-    return im*(2.0*(double)n)*M_PI/(double)beta;
 }
 
 arma::Mat< std::complex<double> >& FunctorBuildGk::swap(arma::Mat< std::complex<double> >& M){
@@ -183,11 +175,6 @@ void FunctorBuildGk::get_ndo_2D(){
         _ndo = ndo_av;
     }
 }
-
-double FunctorBuildGk::get_ndo(){
-    return this->_ndo;
-}
-
 
 K_1D K_1D::operator+(const K_1D& rhs) const{
     K_1D obj(_qx,_iwn);
