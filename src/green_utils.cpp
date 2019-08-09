@@ -2,6 +2,10 @@
 
 using namespace Hubbard;
 
+const std::complex<double> im(0.0,1.0);
+const arma::Mat< std::complex<double> > II_(2, 2, arma::fill::eye);
+const arma::Mat< std::complex<double> > ZEROS_(2, 2, arma::fill::zeros);
+
 std::ostream& operator<<(std::ostream& os, const FunctorBuildGk& obj){
     return os << "The content is: \n" << "U: " << obj._u << std::endl << "mu: " << obj._mu << std::endl <<
     "beta: " << obj._beta << std::endl << "n_do: " << obj._ndo << std::endl <<
@@ -108,7 +112,6 @@ arma::Mat< std::complex<double> >& FunctorBuildGk::swap(arma::Mat< std::complex<
     M = tmp_mat;
     return M;
 }
-
 
 void FunctorBuildGk::get_ndo_1D(){
     for (int i=0; i<_Nit; i++) {

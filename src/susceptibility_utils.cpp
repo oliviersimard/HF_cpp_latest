@@ -104,7 +104,7 @@ std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K
     std::complex<double> xi=0.0+0.0*im;
     for (size_t ikn=0; ikn<Gk._size; ikn++){
         for (size_t k=0; k<Gk._kArr_l.size(); k++){
-            xi += Gk(Gk._precomp_wn[ikn]+q._iwn,Gk._kArr_l[k]+q._qx)(0,0)*Gk(Gk._precomp_wn[ikn],Gk._kArr_l[k])(0,0);
+            xi += Gk( Gk._precomp_wn[ikn] + q._iwn, Gk._kArr_l[k] + q._qx )(0,0) * Gk( Gk._precomp_wn[ikn], Gk._kArr_l[k] )(0,0);
         }
     }
     xi *= 1.0/(Gk._beta*Gk._Nk); /// Removed minus sign

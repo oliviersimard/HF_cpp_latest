@@ -14,7 +14,7 @@ class Json_utils{
         const std::streampos getSize(const std::string&);
         const json_spirit::mValue& get_object_item(const json_spirit::mValue&, const std::string&);
         const json_spirit::mValue& get_array_item(const json_spirit::mValue&, size_t);
-        MembCarrier JSONLoading(std::string& filename);
+        MembCarrier JSONLoading(const std::string& filename);
 
     Json_utils(){};
     ~Json_utils(){};
@@ -24,7 +24,7 @@ class Json_utils{
 struct MembCarrier{
     double* db_ptr, *db_ptr2; // db_ptr2 is meant to contain the k-space vector for 2D case!
     int* int_ptr;
-    MembCarrier(double*, double*, int*);
+    explicit MembCarrier(double*, double*, int*);
 };
 
 #endif /* json_utils_H_ */

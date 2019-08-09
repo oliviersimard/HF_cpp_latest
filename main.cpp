@@ -10,17 +10,17 @@ using namespace std;
 
 int main(int argc, char** argv){
 
-    string filename("params.json");
+    const string filename("params.json");
     Json_utils JsonObj;
     MembCarrier params = JsonObj.JSONLoading(filename); // Loading file content into container.
 
-    int Nomega=*(params.int_ptr);
-    int Nk=*(params.int_ptr+3);
-	double beta_init=*(params.db_ptr+8),beta_step=*(params.db_ptr+7),beta_max=*(params.db_ptr+6);
-    double u_init=*(params.db_ptr+2),u_step=*(params.db_ptr+1),u_max=*(params.db_ptr);
+    const int Nomega=*(params.int_ptr);
+    const int Nk=*(params.int_ptr+3);
+	const double beta_init=*(params.db_ptr+8),beta_step=*(params.db_ptr+7),beta_max=*(params.db_ptr+6);
+    const double u_init=*(params.db_ptr+2),u_step=*(params.db_ptr+1),u_max=*(params.db_ptr);
 
-    double ndo_initial=0.6;
-    int Niterations=*(params.int_ptr+1);
+    const double ndo_initial=0.6;
+    const int Niterations=*(params.int_ptr+1);
     double mu=0.0;
     double ndo;
     vector< complex<double> > Gup_k(Nomega,0.0);
@@ -69,6 +69,7 @@ int main(int argc, char** argv){
             u_ndo_c.get_ndo_1D();
             /* Printing result after selfconsistency. */
             cout << "After 1D: " << u_ndo_c << endl;
+            saveGF_grid(string("data/iwn_k_grid_GF"),u_ndo_c);
             /* Computing ladder susceptibility diagram. */
             for (int k=0; k<=Nk; k++){
                 Suscep = susObj.chisp(u_ndo_c,Hubbard::K_1D(kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!

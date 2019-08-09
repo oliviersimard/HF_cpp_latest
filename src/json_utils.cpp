@@ -27,7 +27,7 @@ MembCarrier::MembCarrier(double* dp, double* dp2, int* ip) : db_ptr(dp), db_ptr2
 
 }
 
-MembCarrier Json_utils::JSONLoading(std::string& filename){
+MembCarrier Json_utils::JSONLoading(const std::string& filename){
 
     std::ifstream JSONText(filename, std::ifstream::in);
     std::stringstream buffer;

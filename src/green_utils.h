@@ -7,20 +7,22 @@
 #include<armadillo>
 #include "json_utils.h"
 
-const std::complex<double> im(0.0,1.0); // Maybe avoid so many const declaration to speed up code.
-const arma::Mat< std::complex<double> > II_(2, 2, arma::fill::eye);
-const arma::Mat< std::complex<double> > ZEROS_(2, 2, arma::fill::zeros);
+extern const std::complex<double> im; // Maybe avoid so many const declaration to speed up code.
+extern const arma::Mat< std::complex<double> > II_;
+extern const arma::Mat< std::complex<double> > ZEROS_;
 static arma::Mat< std::complex<double> > statMat(2,2);
 
 class Susceptibility; // class Susceptibility is member of the global scope.
 class FFT; // class FFT is member of the global scope.
 namespace Hubbard { class FunctorBuildGk; } // Have to forward declare class in namespace to be able to overload operator<<.
-std::ostream& operator<<(std::ostream& os, const Hubbard::FunctorBuildGk& obj);
+std::ostream& operator<<(std::ostream&, const Hubbard::FunctorBuildGk&);
+void saveGF_grid(const std::string, Hubbard::FunctorBuildGk&);
 
 namespace Hubbard{
 
 class FunctorBuildGk{
     friend std::ostream& ::operator<<(std::ostream& os, const FunctorBuildGk& obj);
+    friend void ::saveGF_grid(std::string filename, FunctorBuildGk& obj);
     friend class ::Susceptibility;
     friend class ::FFT;
     public:
