@@ -1,17 +1,17 @@
 {
-    "Umax": 0.9,
+    "Umax": 1.2,
     "Ustep": 0.5,
-    "Umin": 0.9,
-    "Vmax": 1.0,
+    "Umin": 1.2,
+    "Vmax": 1.1,
     "Vstep": 0.1,
     "Vmin": 0.1,
     "betamax": 100.0,
     "betastep": 5.0,
     "betamin": 100.0,
-    "Nomega": 400, 
+    "Nomega": 100, 
     "N_it": 100,
     "dims": 1,
-    "gridK": 200,
+    "gridK": 100,
     "q_1D": 0.0,
     "q_2D": [0.0,0.0]
 }

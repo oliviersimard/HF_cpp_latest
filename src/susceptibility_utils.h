@@ -2,6 +2,7 @@
 #define SUSCEPTIBILITY_H_
 
 #include "fft.h"
+#include "integral_utils.h"
 
 class Susceptibility{ // The current-current susceptibility uses the +U in gamma, multiplied by the currents thereafter.
     public:
@@ -13,6 +14,7 @@ class Susceptibility{ // The current-current susceptibility uses the +U in gamma
         std::complex<double> chisp(Hubbard::FunctorBuildGk&,Hubbard::K_2D) const;
         std::complex<double> chi0(Hubbard::FunctorBuildGk&,Hubbard::K_1D) const;
         std::complex<double> chi0(Hubbard::FunctorBuildGk&,Hubbard::K_2D) const;
+        void get_chi_1D(Hubbard::FunctorBuildGk& Gk, std::string filename_chi, std::string filename_chi0);
 
 };
 

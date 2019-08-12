@@ -85,8 +85,10 @@ arma::Mat< std::complex<double> > FunctorBuildGk::buildGkAA_1D(int j, double mu,
 }
 
 arma::Mat< std::complex<double> > FunctorBuildGk::buildGkAA_1D_w(std::complex<double> w, double mu, double u, double ndo, double kx){
-    statMat(0,0) = 1.0/( w + mu - u*ndo - epsk1D(kx)*epsk1D(kx)/( w + mu - u*(1.0-ndo) ) ); // G^{AA}_{up}
-    statMat(1,1) = 1.0/( w + mu - u*(1.0-ndo) - epsk1D(kx)*epsk1D(kx)/( w + mu - u*(ndo) ) ); // G^{AA}_{down}
+    // statMat(0,0) = 1.0/( w + mu - u*ndo - epsk1D(kx)*epsk1D(kx)/( w + mu - u*(1.0-ndo) ) ); // G^{AA}_{up}
+    // statMat(1,1) = 1.0/( w + mu - u*(1.0-ndo) - epsk1D(kx)*epsk1D(kx)/( w + mu - u*(ndo) ) ); // G^{AA}_{down}
+    statMat(0,0) = 1.0/( w + mu - epsk1D(kx) - u*ndo );
+    statMat(1,1) = 1.0/( w + mu - epsk1D(kx) - u*(1.0-ndo) );
     statMat(0,1) = 0.0+0.0*im; statMat(1,0) = 0.0+0.0*im;
     return statMat;
 }
@@ -121,7 +123,7 @@ void FunctorBuildGk::get_ndo_1D(){
     
             // calculate Gup_k in Matsubara space (AFM)
             for (int jj=0; jj<_size; jj++){
-                *(_Gup_k+jj) = buildGkAA_1D(jj,_mu,_beta,_u,_ndo,_kArr[kkx])(0,0);
+                *(_Gup_k+jj) = buildGkAA_1D(jj,_mu,_beta,_u,_ndo,_kArr_l[kkx])(0,0);
                 //*(_Gup_k+jj) = buildGkBB_1D(jj,_mu,_beta,_u,_ndo,_kArr[kkx])(0,0); // Modified here to BB
             }
 

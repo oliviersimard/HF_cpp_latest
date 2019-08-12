@@ -10,8 +10,8 @@ PROG=PiTon
 
 all: $(PROG)
 
-$(PROG): $(OBJ)/main.o $(OBJ)/green_utils.o $(OBJ)/susceptibility_utils.o $(OBJ)/fft.o $(OBJ)/json_utils.o
-	$(CXX) $(OBJ)/main.o $(OBJ)/green_utils.o $(OBJ)/susceptibility_utils.o $(OBJ)/fft.o $(OBJ)/json_utils.o $(CXXFLAGS) -o main.out
+$(PROG): $(OBJ)/main.o $(OBJ)/green_utils.o $(OBJ)/susceptibility_utils.o $(OBJ)/fft.o $(OBJ)/json_utils.o $(OBJ)/integral_utils.o
+	$(CXX) $(OBJ)/main.o $(OBJ)/green_utils.o $(OBJ)/susceptibility_utils.o $(OBJ)/fft.o $(OBJ)/json_utils.o $(OBJ)/integral_utils.o $(CXXFLAGS) -o main.out
 
 $(OBJ)/main.o: $(PWD)/main.cpp
 	$(CXX) -c -I$(INC) $(PWD)/main.cpp -o $(OBJ)/main.o
@@ -27,6 +27,9 @@ $(OBJ)/fft.o: $(SRC)/fft.cpp
 
 $(OBJ)/json_utils.o: $(SRC)/json_utils.cpp
 	$(CXX) -c -I$(INC) $(SRC)/json_utils.cpp -o $(OBJ)/json_utils.o
+
+$(OBJ)/integral_utils.o: $(SRC)/integral_utils.cpp
+	$(CXX) -c -I$(INC) $(SRC)/integral_utils.cpp -o $(OBJ)/integral_utils.o 
 
 clean:
 	rm $(OBJ)/* $(PWD)/main.out

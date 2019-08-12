@@ -7,9 +7,9 @@ void saveGF_grid(const std::string filename, Hubbard::FunctorBuildGk& Gk){
     std::vector< std::complex<double> > Gz(Gk._size,0.0);
     std::string filenameMod = filename+"_U_"+std::to_string(Gk._u)+"_beta_"+std::to_string(Gk._beta)+"_Nk_"+std::to_string(Gk._Nk)+"_Nomega_"+std::to_string(Gk._size)+".dat";
     saveGFGRID.open(filenameMod, std::ios::out | std::ios::app);
-    for (size_t k=0; k<Gk._kArr.size(); k++){
+    for (size_t k=0; k<Gk._kArr_l.size(); k++){
         for (size_t ikn=0; ikn<Gk._size; ikn++){
-            Gz[ikn]=Gk(Gk._precomp_wn[ikn],Gk._kArr[k])(0,0) - 1./Gk.w(ikn,0.0,Gk._beta); // k is fixed!
+            Gz[ikn]=Gk(Gk._precomp_wn[ikn],Gk._kArr_l[k])(0,0) - 1./Gk.w(ikn,0.0,Gk._beta); // k is fixed!
         }
         FFTObj.fft_w2t_notc(Gk,Gz,Gtau);
         for (double el : Gtau){

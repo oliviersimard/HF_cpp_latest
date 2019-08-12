@@ -3,6 +3,9 @@
 #include <sys/stat.h>
 
 inline bool file_exists(const std::string&);
+double funct(double x){
+    return x*x;
+}
 
 using namespace std;
 
@@ -19,6 +22,13 @@ int main(int argc, char** argv){
 	const double beta_init=*(params.db_ptr+8),beta_step=*(params.db_ptr+7),beta_max=*(params.db_ptr+6);
     const double u_init=*(params.db_ptr+2),u_step=*(params.db_ptr+1),u_max=*(params.db_ptr);
 
+    // Integral test
+    // Integrals integralsObj;
+    // double result, result2;
+    // result = integralsObj.integrate_simps(&funct,-2.0,2.0,0.0001);
+    // result2 = integralsObj.integrate_trap(&funct,-2.0,2.0,0.0001);
+    // cout << result << " " << result2 << endl;
+
     const double ndo_initial=0.6;
     const int Niterations=*(params.int_ptr+1);
     double mu=0.0;
@@ -32,9 +42,11 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
+    string testStr("_ladders"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+
     #ifdef ONED
-    string fileOutput("data/TvsU_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
-    string fileOutputGtau("data/Gtau_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+    string fileOutput("data/TvsU_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+    string fileOutputGtau("data/Gtau_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
     #else
     string fileOutput("data/TvsU_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
     string fileOutputGtau("data/Gtau_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
@@ -51,48 +63,30 @@ int main(int argc, char** argv){
     }
     ofstream outputFile;
     ofstream outputFileGtau;
-    ofstream outputFileChi;
-    ofstream outputFileChi0;
     for (double beta=beta_init; beta<=beta_max; beta+=beta_step){
-
-        string fileOutputChi("data/Chisp_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
-        string fileOutputChi0("data/Chi0_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+".dat");
+        // Filenames for the file outputs of the susceptibilities chi and chi0.
+        string fileOutputChi("data/Chisp_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+        string fileOutputChi0("data/Chi0_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
         for (double u=u_init; u<=u_max; u+=u_step) {
             mu=u/2.0;
             ndo=ndo_initial;
             std::vector<double> Gtau;
             Hubbard::FunctorBuildGk u_ndo_c(mu,beta,u,ndo,kArr,kArr_l,Niterations,Nk,Gup_k);
             #ifdef ONED
-            complex<double> Suscep, Suscep0;
             if (VERBOSE > 0) cout << "First 1D: " << u_ndo_c << endl;
             /* Getting the selfconsistency part done. */
             u_ndo_c.get_ndo_1D();
             /* Printing result after selfconsistency. */
             cout << "After 1D: " << u_ndo_c << endl;
-            saveGF_grid(string("data/iwn_k_grid_GF"),u_ndo_c);
+            // saveGF_grid(string("data/iwn_k_grid_GF"+testStr),u_ndo_c); // Saves G(tau) for each k-value. Eventually add as optional!!
             /* Computing ladder susceptibility diagram. */
-            for (int k=0; k<=Nk; k++){
-                Suscep = susObj.chisp(u_ndo_c,Hubbard::K_1D(kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
-                Suscep0 = susObj.chi0(u_ndo_c,Hubbard::K_1D(kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
-                /* Saving imaginary part of the susceptibility */
-                outputFileChi.open(fileOutputChi, ofstream::out | ofstream::app);
-                outputFileChi << 1.0*Suscep.imag() << " ";
-                outputFileChi.close();
-                // cout << "susceptibility at k: " << kArr_l[k] << " is " << Suscep << endl;
-                outputFileChi0.open(fileOutputChi0, ofstream::out | ofstream::app);
-                outputFileChi0 << Suscep0.imag() << " ";
-                outputFileChi0.close();
-            }
-            cout << "susceptibility: " << Suscep << endl;
-            outputFileChi.open(fileOutputChi, ofstream::out | ofstream::app);
-            outputFileChi << "\n";
-            outputFileChi.close();
-            outputFileChi0.open(fileOutputChi0, ofstream::out | ofstream::app);
-            outputFileChi0 << "\n";
-            outputFileChi0.close();
-    
+            complex<double> susLadder;
+            susLadder = susObj.chispsp_long_expr(u_ndo_c,Hubbard::K_1D(0.0,0.0+0.0*im));
+            cout << "Ladder susceptibility: " << susLadder << endl;
+            // susObj.get_chi_1D(u_ndo_c,fileOutputChi,fileOutputChi0); // Prints out chi and chi0 into files. Eventually add a boolean value to select this as option in params.json.
+
             /* Getting G(\tau) for each value */
-            Gtau = fftObj.get_gtau1D(u_ndo_c);
+            Gtau = fftObj.get_gtau1D(u_ndo_c); // This saves the k-averaged G(tau) Green‘s function.
             outputFileGtau.open(fileOutputGtau, ofstream::out | ofstream::app);
             for (double el : Gtau){
                 outputFileGtau << el << " ";

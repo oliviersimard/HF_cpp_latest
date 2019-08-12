@@ -13,3 +13,4 @@ hartree2DSure.cpp
 build
 data
 *.pdf
+*DS*
