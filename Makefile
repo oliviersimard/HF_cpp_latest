@@ -1,10 +1,10 @@
 SRC=$(PWD)/src
 OBJ=$(PWD)/obj
 
-CXX=g++ -std=c++14 -Wall #-DONED
+CXX=g++ -std=c++14 -g -O0 -Wall #-Xpreprocessor -fopenmp #-DONED
 INC=${HOME}/include
 LIB=${HOME}/lib
-CXXFLAGS= -L$(LIB) -larmadillo -lfftw3 -ljson_spirit
+CXXFLAGS= -L$(LIB) -larmadillo -lfftw3 -ljson_spirit #-lboost_system -lboost_thread#-lomp
 
 PROG=PiTon
 

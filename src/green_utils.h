@@ -14,6 +14,7 @@ static arma::Mat< std::complex<double> > statMat(2,2);
 
 class Susceptibility; // class Susceptibility is member of the global scope.
 class FFT; // class FFT is member of the global scope.
+// class ThreadFunctor;
 namespace Hubbard { class FunctorBuildGk; } // Have to forward declare class in namespace to be able to overload operator<<.
 std::ostream& operator<<(std::ostream&, const Hubbard::FunctorBuildGk&);
 void saveGF_grid(const std::string, Hubbard::FunctorBuildGk&);
@@ -25,6 +26,7 @@ class FunctorBuildGk{
     friend void ::saveGF_grid(std::string filename, FunctorBuildGk& obj);
     friend class ::Susceptibility;
     friend class ::FFT;
+    // friend class ::ThreadFunctor;
     public:
         FunctorBuildGk(double,int,double,double,std::vector<double>,std::vector<double>,int,int,std::vector< std::complex<double> >&);
         FunctorBuildGk(::MembCarrier* MemObj,double mu,double ndo,std::vector<double> kArr,std::vector<double> kArr_l,std::vector< std::complex<double> >& Gup_k);

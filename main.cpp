@@ -1,6 +1,7 @@
 #include "src/susceptibility_utils.h"
 #include <iomanip>
 #include <sys/stat.h>
+//#include <omp.h>
 
 inline bool file_exists(const std::string&);
 double funct(double x){
@@ -12,6 +13,8 @@ using namespace std;
 #define ONED
 
 int main(int argc, char** argv){
+
+    // cout << "Number of threads: " << boost::thread::hardware_concurrency() << '\n';
 
     const string filename("params.json");
     Json_utils JsonObj;
