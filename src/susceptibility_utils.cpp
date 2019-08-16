@@ -109,48 +109,6 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
     return Gk._u/lower_level;
 }
 
-std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
-    std::ofstream output;
-    std::string strOutput("ktilde_kbar_U"+std::to_string(Gk._u)+"_beta"+std::to_string(Gk._beta)+"_ndo"+std::to_string(Gk._ndo)+"_Nk"+std::to_string(Gk._Nk)+"_Nw"+std::to_string(Gk._size)+"__AA.dat");
-    std::complex<double> upper_level=0.0+0.0*im;
-    for (size_t ktilde=0; ktilde<Gk._kArr_l.size(); ktilde++){
-        std::cout << "ktilde: " << ktilde << std::endl;
-        for (size_t kbar=0; kbar<Gk._kArr_l.size(); kbar++){
-            std::cout << "kbar: " << kbar << std::endl;
-            std::complex<double> tmp_val_kbar=0.0+0.0*im;
-            // #pragma omp parallel for shared(Gk,ktilde,kbar,q) reduction(+: upper_level, tmp_val_kbar)
-            for (int wtilde=0; wtilde<Gk._size; wtilde++){
-                for (int wbar=0; wbar<Gk._size; wbar++){
-                    std::complex<double> tmp_val = Gk(
-                            Gk._precomp_wn[wtilde],Gk._kArr_l[ktilde]
-                            )(0,0)*Gk(
-                            Gk._precomp_wn[wtilde]-q._iwn,Gk._kArr_l[ktilde]-q._qx
-                            )(0,0)*gamma_oneD_spsp( Gk, Gk._kArr_l[ktilde], Gk._precomp_wn[wtilde], Gk._kArr_l[kbar], Gk._precomp_wn[wbar], q )*Gk(
-                            Gk._precomp_wn[wbar]+q._iwn,Gk._kArr_l[kbar]+q._qx
-                            )(1,1)*Gk(
-                            Gk._precomp_wn[wbar],Gk._kArr_l[kbar]
-                            )(1,1);
-                    upper_level += tmp_val;
-                    tmp_val_kbar += tmp_val;
-                }
-                
-            }
-            output.open(strOutput, std::ofstream::out | std::ofstream::app);
-            output << tmp_val_kbar << " ";
-            output.close();
-        }
-        output.open(strOutput, std::ofstream::out | std::ofstream::app);
-        output << "\n";
-        output.close();
-    }
-    upper_level *= -1.0*(1.0/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk));
-    output.open(strOutput, std::ofstream::out | std::ofstream::app);
-    output << "\n\n";
-    output << "Spin susceptibility at "+std::to_string(Gk._u)+" : " << upper_level << "\n\n";
-    output.close();
-    return upper_level;
-}
-
 // std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
 //     std::ofstream output;
 //     std::string strOutput("ktilde_kbar_U"+std::to_string(Gk._u)+"_beta"+std::to_string(Gk._beta)+"_ndo"+std::to_string(Gk._ndo)+"_Nk"+std::to_string(Gk._Nk)+"_Nw"+std::to_string(Gk._size)+"__AA.dat");
@@ -160,8 +118,23 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
 //         for (size_t kbar=0; kbar<Gk._kArr_l.size(); kbar++){
 //             std::cout << "kbar: " << kbar << std::endl;
 //             std::complex<double> tmp_val_kbar=0.0+0.0*im;
-//             ThreadFunctor threadSafe(ktilde,kbar,upper_level,tmp_val_kbar,Gk,q);
-//             boost::thread trh(threadSafe);
+//             // #pragma omp parallel for shared(Gk,ktilde,kbar,q) reduction(+: upper_level, tmp_val_kbar)
+//             for (int wtilde=0; wtilde<Gk._size; wtilde++){
+//                 for (int wbar=0; wbar<Gk._size; wbar++){
+//                     std::complex<double> tmp_val = Gk(
+//                             Gk._precomp_wn[wtilde],Gk._kArr_l[ktilde]
+//                             )(0,0)*Gk(
+//                             Gk._precomp_wn[wtilde]-q._iwn,Gk._kArr_l[ktilde]-q._qx
+//                             )(0,0)*gamma_oneD_spsp( Gk, Gk._kArr_l[ktilde], Gk._precomp_wn[wtilde], Gk._kArr_l[kbar], Gk._precomp_wn[wbar], q )*Gk(
+//                             Gk._precomp_wn[wbar]+q._iwn,Gk._kArr_l[kbar]+q._qx
+//                             )(1,1)*Gk(
+//                             Gk._precomp_wn[wbar],Gk._kArr_l[kbar]
+//                             )(1,1);
+//                     upper_level += tmp_val;
+//                     tmp_val_kbar += tmp_val;
+//                 }
+                
+//             }
 //             output.open(strOutput, std::ofstream::out | std::ofstream::app);
 //             output << tmp_val_kbar << " ";
 //             output.close();
@@ -177,6 +150,69 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
 //     output.close();
 //     return upper_level;
 // }
+
+std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
+    std::ofstream output;
+    std::string strOutput("ktilde_kbar_U"+std::to_string(Gk._u)+"_beta"+std::to_string(Gk._beta)+"_ndo"+std::to_string(Gk._ndo)+"_Nk"+std::to_string(Gk._Nk)+"_Nw"+std::to_string(Gk._size)+"__AA.dat");
+    std::complex<double> upper_level=0.0+0.0*im; // total susceptibility
+    arma::Mat< std::complex<double> > ktb(Gk._kArr_l.size(),Gk._kArr_l.size()); // Container for ktilde-kbar susceptibility!
+    unsigned int it=0;
+    int totSize=Gk._kArr_l.size()*Gk._kArr_l.size();
+    std::cout << "totSize: " << totSize << " size kArr_l: " << Gk._kArr_l.size() << std::endl;
+    ThreadFunctor::ThreadFunctor1D threadObj(upper_level,Gk,q,ktb);
+    while (it<totSize){
+        if (totSize % NUM_THREADS != 0){
+            if ( totSize-it == (totSize % NUM_THREADS) ){
+                int newl=totSize-it;
+                std::vector<std::thread> tt(newl);
+                for (int l=0; l<newl; l++){
+                    int ltot=it+l; // Have to make sure spans over the whole array of k-space.
+                    int lkt = static_cast<int>(floor(ltot/Gk._kArr_l.size()));
+                    int lkb = (totSize % Gk._kArr_l.size());
+                    std::thread t(threadObj,lkt,lkb);
+                    tt[l]=std::move(t);
+                    std::cout << "ho" << ltot << "\n";
+                }
+                threadObj.join_all(tt);
+            }
+            else{
+                std::vector<std::thread> tt(NUM_THREADS);
+                for (int l=0; l<NUM_THREADS; l++){
+                    int ltot=it+l; // Have to make sure spans over the whole array of k-space.
+                    int lkt = static_cast<int>(floor(ltot/Gk._kArr_l.size()));
+                    int lkb = (ltot % Gk._kArr_l.size());
+                    std::cout << "lkt: " << lkt << " lkb: " << lkb << "\n";
+                    std::thread t(threadObj,lkt, lkb);
+                    tt[l]=std::move(t);
+                    std::cout << "hola" << ltot << "\n";
+                }
+                threadObj.join_all(tt);
+            }
+        }
+        else{
+            std::vector<std::thread> tt(NUM_THREADS);
+            for (int l=0; l<NUM_THREADS; l++){
+                int ltot=it+l; // Have to make sure spans over the whole array of k-space.
+                int lkt = static_cast<int>(floor(ltot/Gk._kArr_l.size()));
+                int lkb = (ltot % Gk._kArr_l.size());
+                std::thread t(threadObj,lkt, lkb);
+                tt[l]=std::move(t);
+            }
+            threadObj.join_all(tt);
+        }
+        it+=NUM_THREADS;
+    }
+    upper_level *= -1.0*(1.0/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk));
+    output.open(strOutput, std::ofstream::out | std::ofstream::app);
+    for (int ktilde=0; ktilde<Gk._kArr_l.size(); ktilde++){ // Printing to file
+        for (int kbar=0; kbar<Gk._kArr_l.size(); kbar++){
+            output << ktb(ktilde,kbar) << " ";
+        }
+        output << "\n";
+    }
+    output.close();
+    return upper_level;
+}
 
 // std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
 //     std::complex<double> xi=0.0+0.0*im;

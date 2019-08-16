@@ -181,6 +181,29 @@ void FunctorBuildGk::get_ndo_2D(){
     }
 }
 
+double FunctorBuildGk::get_double_occupancy_AA(){
+/* This function computes U<n_{up}n_{down}> = 1/(\beta*V)*\sum_{k,ikn} \Sigma(k,ikn)G(k,ikn)e^{-ikn0^-} */
+    double d=0.0;
+    for (int j=0; j<_size; j++){
+        std::complex<double> d_k(0.0,0.0);
+        std::complex<double> wj = w(j,_mu,_beta);
+        for (int k=0; k<_kArr.size(); k++){ // Summing over G(k)
+            double epsk = -2.0*cos(_kArr[k]);
+            if ( (k==0) || (k==_Nk) ){
+                d_k += 0.5*_u*_ndo/( wj - epsk - _u*_ndo );
+            }
+            else{
+                d_k += 1.0*_u*_ndo/( wj - epsk - _u*_ndo);
+            }
+        }
+        d_k /= (_Nk);
+        d += (2.0/_beta)*( d_k ).real();
+    }
+    d *= 1.0/_u;
+
+    return d;
+}
+
 K_1D K_1D::operator+(const K_1D& rhs) const{
     K_1D obj(_qx,_iwn);
     obj._qx = this->_qx + rhs._qx;

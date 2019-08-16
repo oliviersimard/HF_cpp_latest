@@ -14,7 +14,7 @@ using namespace std;
 
 int main(int argc, char** argv){
 
-    // cout << "Number of threads: " << boost::thread::hardware_concurrency() << '\n';
+    cout << "Number of threads: " << thread::hardware_concurrency() << '\n';
 
     const string filename("params.json");
     Json_utils JsonObj;
@@ -85,7 +85,7 @@ int main(int argc, char** argv){
             /* Computing ladder susceptibility diagram. */
             complex<double> susLadder;
             susLadder = susObj.chispsp_long_expr(u_ndo_c,Hubbard::K_1D(0.0,0.0+0.0*im));
-            cout << "Ladder susceptibility: " << susLadder << endl;
+            // cout << "Ladder susceptibility: " << susLadder << endl;
             // susObj.get_chi_1D(u_ndo_c,fileOutputChi,fileOutputChi0); // Prints out chi and chi0 into files. Eventually add a boolean value to select this as option in params.json.
 
             /* Getting G(\tau) for each value */

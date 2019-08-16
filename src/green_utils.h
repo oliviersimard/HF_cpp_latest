@@ -14,7 +14,7 @@ static arma::Mat< std::complex<double> > statMat(2,2);
 
 class Susceptibility; // class Susceptibility is member of the global scope.
 class FFT; // class FFT is member of the global scope.
-// class ThreadFunctor;
+namespace ThreadFunctor { class ThreadFunctor1D; }
 namespace Hubbard { class FunctorBuildGk; } // Have to forward declare class in namespace to be able to overload operator<<.
 std::ostream& operator<<(std::ostream&, const Hubbard::FunctorBuildGk&);
 void saveGF_grid(const std::string, Hubbard::FunctorBuildGk&);
@@ -26,10 +26,11 @@ class FunctorBuildGk{
     friend void ::saveGF_grid(std::string filename, FunctorBuildGk& obj);
     friend class ::Susceptibility;
     friend class ::FFT;
-    // friend class ::ThreadFunctor;
+    friend class ::ThreadFunctor::ThreadFunctor1D;
     public:
         FunctorBuildGk(double,int,double,double,std::vector<double>,std::vector<double>,int,int,std::vector< std::complex<double> >&);
         FunctorBuildGk(::MembCarrier* MemObj,double mu,double ndo,std::vector<double> kArr,std::vector<double> kArr_l,std::vector< std::complex<double> >& Gup_k);
+        FunctorBuildGk()=default;
         ~FunctorBuildGk()=default;
         
         arma::Mat< std::complex<double> > operator()(int, double, double);
@@ -56,6 +57,7 @@ class FunctorBuildGk{
         arma::Mat< std::complex<double> > buildGkBB_1D(int,double,int,double,double,double);
         arma::Mat< std::complex<double> > buildGkBB_1D_w(std::complex<double>,double,double,double,double);
 
+        double get_double_occupancy_AA();
         inline double get_ndo(){
             return this->_ndo;
         } // Called in main.
@@ -71,6 +73,7 @@ class FunctorBuildGk{
 
 struct K_1D{
     K_1D(double qx, std::complex<double> iwn) : _qx(qx), _iwn(iwn){};
+    K_1D()=default;
     ~K_1D()=default;
     K_1D operator+(const K_1D& rhs) const;
     K_1D operator-(const K_1D& rhs) const;
@@ -83,6 +86,7 @@ struct K_2D : K_1D{
     K_2D(double qx, double qy, std::complex<double> iwn) : K_1D(qx,iwn){
         this->_qy = qy;
     }
+    K_2D()=default;
     ~K_2D()=default;
     K_2D operator+(const K_2D& rhs) const;
     K_2D operator-(const K_2D& rhs) const;

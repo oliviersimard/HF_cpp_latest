@@ -10,7 +10,7 @@ set(LIBRARIES_CUSTOM fftw3 armadillo json_spirit)
 set(SOURCES_COMMON
         src/fft.cpp src/susceptibility_utils.cpp
         src/green_utils.cpp src/json_utils.cpp
-        src/integral_utils.cpp)
+        src/integral_utils.cpp src/thread_utils.cpp)
 
 #set(SOURCES_HF hartree2DSure.cpp ${SOURCES_COMMON})
 set(SOURCES_MAIN main.cpp ${SOURCES_COMMON})
