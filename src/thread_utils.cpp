@@ -9,6 +9,24 @@ ThreadFunctor1D::ThreadFunctor1D(std::complex<double>& upper_level,Hubbard::Func
     this->_ktb = mat;
 }
 
+ThreadFunctor1D::ThreadFunctor1D(ThreadFunctor1D&& rhs){
+    // Copying content of source object.
+    _Gk=rhs._Gk;
+    _q=rhs._q;
+    _ktb=rhs._ktb;
+    _upper_level=rhs._upper_level;
+
+    // Emptying the source object
+    rhs.~ThreadFunctor1D();
+}
+
+ThreadFunctor1D::ThreadFunctor1D(const ThreadFunctor1D& rhs){
+    this->_Gk=rhs._Gk;
+    this->_ktb=rhs._ktb;
+    this->_q=rhs._q;
+    this->_upper_level=rhs._upper_level;
+}
+
 void ThreadFunctor1D::operator()(int ktilde, int kbar){
     std::complex<double> tmp_val_kbar=0.0+0.0*im;
     for (int wtilde=0; wtilde<_Gk._size; wtilde++){

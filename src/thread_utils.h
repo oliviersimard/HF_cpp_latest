@@ -8,7 +8,7 @@
 
 #define NUM_THREADS 2
 
-#define PARALLEL
+// #define PARALLEL
 
 static std::mutex mutx;
 
@@ -39,8 +39,12 @@ class ThreadFunctor1D{
     public:
         ThreadFunctor1D(std::complex<double>& upper_level, Hubbard::FunctorBuildGk& Gk, Hubbard::K_1D& q, arma::Mat< std::complex<double> >& mat);
         ~ThreadFunctor1D(){};
+        ThreadFunctor1D(ThreadFunctor1D&& rhs);
         void operator()(int ktilde, int kbar);
         std::complex<double> gamma_oneD_spsp(double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar);
+        ThreadFunctor1D& operator=(const ThreadFunctor1D&)=delete;
+        ThreadFunctor1D& operator=(ThreadFunctor1D&& other)=delete;
+        ThreadFunctor1D(const ThreadFunctor1D&);
         inline void wait(int seconds){
             std::this_thread::sleep_for(std::chrono::seconds(seconds));
         }
@@ -51,6 +55,7 @@ class ThreadFunctor1D{
             mutx.unlock();
         }
         void join_all(std::vector<std::thread>& grp);
+        
 
     private:
         std::complex<double> _upper_level;
