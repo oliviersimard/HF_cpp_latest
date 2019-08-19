@@ -5,6 +5,8 @@
 #include <complex>
 #include <functional>
 
+// #define INTEGRAL
+
 /* Template structure to call functions in classes. */
 template<typename T, typename C, typename Q>
 struct functorStruct{

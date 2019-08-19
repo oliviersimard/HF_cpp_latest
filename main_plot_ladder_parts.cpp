@@ -9,8 +9,7 @@ inline bool file_exists(const string&);
 
 #define ONED
 
-// #define PARALLEL
-
+#ifdef PARALLEL
 /* Remember that armadillo is column-major. Useful for parallel version. */
 static arma::Mat< complex<double> > matGamma;
 static arma::Mat< complex<double> > matWeigths;
@@ -29,6 +28,7 @@ class ThreadWrapper{
         arma::cx_dmat::iterator _ktb;
         arma::cx_dmat::iterator _ktbW;
 };
+#endif
 
 
 int main(int argc, char** argv){
@@ -55,7 +55,7 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_serial"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_parallel"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd(""); // The folder in data/ containing the data.
 
     #ifdef ONED
@@ -112,6 +112,7 @@ int main(int argc, char** argv){
                             int lkb = (totSize % kArr_l.size());
                             thread t(threadObj,lkt,lkb,beta);
                             tt[l]=move(t);
+                            // tt[l]=thread(threadObj,lkt,lkb,beta);
                             cout << "ho" << ltot << "\n";
                         }
                         threadObj.join_all(tt);
@@ -125,6 +126,7 @@ int main(int argc, char** argv){
                             cout << "lkt: " << lkt << " lkb: " << lkb << "\n";
                             thread t(threadObj,lkt,lkb,beta);
                             tt[l]=move(t);
+                            // tt[l]=thread(threadObj,lkt,lkb,beta);
                             cout << "hola" << ltot << "\n";
                         }
                         threadObj.join_all(tt);
@@ -138,6 +140,7 @@ int main(int argc, char** argv){
                         int lkb = (ltot % kArr_l.size());
                         thread t(threadObj,lkt,lkb,beta);
                         tt[l]=move(t);
+                        // tt[l]=thread(threadObj,lkt,lkb,beta);
                     }
                     threadObj.join_all(tt);
                 }
@@ -239,6 +242,8 @@ inline bool file_exists (const string& filename) {
   return (stat(filename.c_str(), &buffer) == 0); 
 }
 
+#ifdef PARALLEL
+
 ThreadWrapper::ThreadWrapper(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D& q,arma::cx_dmat::iterator matPtr,arma::cx_dmat::iterator matWPtr){
     this->_Gk = Gk;
     this->_q = q;
@@ -298,3 +303,5 @@ void ThreadWrapper::join_all(vector<thread>& grp){
         }
     }
 }
+
+#endif
