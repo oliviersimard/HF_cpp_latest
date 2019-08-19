@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.02 FATAL_ERROR)
 project(HubbardHF)
 
 # important for the use of tuples
-SET(CMAKE_CXX_FLAGS "-std=c++0x")
+SET(CMAKE_CXX_FLAGS "-std=c++14")
 
 set(LIBRARIES_CUSTOM fftw3 armadillo json_spirit)
 

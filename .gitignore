@@ -1,4 +1,4 @@
-main.out
+*.out
 test
 obj
 *.dat

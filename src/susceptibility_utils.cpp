@@ -214,33 +214,33 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
     return upper_level;
 }
 
-// std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
-//     std::complex<double> xi=0.0+0.0*im;
-//     for (size_t ikn=0; ikn<Gk._size; ikn++){
-//         for (size_t k=0; k<Gk._kArr_l.size(); k++){
-//             xi += Gk( Gk._precomp_wn[ikn] + q._iwn, Gk._kArr_l[k] + q._qx )(0,0) * Gk( Gk._precomp_wn[ikn], Gk._kArr_l[k] )(0,0);
-//             //xi += Gk( Gk._precomp_wn[ikn] + q._iwn, Gk._kArr_l[k] + q._qx )(1,1) * Gk( Gk._precomp_wn[ikn], Gk._kArr_l[k] )(1,1); // Changed (0,0) for (1,1)
-//         }
-//     }
-//     xi *= 1.0/(Gk._beta*Gk._Nk); /// Removed minus sign
-//     return xi;
-// }
-
 std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
-    Integrals integralsObj;
     std::complex<double> xi=0.0+0.0*im;
-    for (size_t ikn=0; ikn<Gk._size; ikn++){ // Integrating over BZ for each Matsubara frequency.
-        std::function< double(double) > tmpFunctImag = [&](double k){
-            return ( Gk( Gk._precomp_wn[ikn] + q._iwn, k + q._qx )(0,0) * Gk( Gk._precomp_wn[ikn], k )(0,0) ).imag();
-        };
-        std::function< double(double) > tmpFunctReal = [&](double k){
-            return ( Gk( Gk._precomp_wn[ikn] + q._iwn, k + q._qx )(0,0) * Gk( Gk._precomp_wn[ikn], k )(0,0) ).real();
-        };
-        xi += ( integralsObj.integrate_simps(tmpFunctReal,-M_PI,M_PI,0.001) + im*integralsObj.integrate_simps(tmpFunctImag,-M_PI,M_PI,0.001) ); // 0.001 is enough!
+    for (size_t ikn=0; ikn<Gk._size; ikn++){
+        for (size_t k=0; k<Gk._kArr_l.size(); k++){
+            xi += Gk( Gk._precomp_wn[ikn] + q._iwn, Gk._kArr_l[k] + q._qx )(0,0) * Gk( Gk._precomp_wn[ikn], Gk._kArr_l[k] )(0,0);
+            //xi += Gk( Gk._precomp_wn[ikn] + q._iwn, Gk._kArr_l[k] + q._qx )(1,1) * Gk( Gk._precomp_wn[ikn], Gk._kArr_l[k] )(1,1); // Changed (0,0) for (1,1)
+        }
     }
-    xi *= 1.0/(Gk._beta*(2.0*M_PI)); /// Removed minus sign
+    xi *= 1.0/(Gk._beta*Gk._Nk); /// Removed minus sign
     return xi;
 }
+
+// std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
+//     Integrals integralsObj;
+//     std::complex<double> xi=0.0+0.0*im;
+//     for (size_t ikn=0; ikn<Gk._size; ikn++){ // Integrating over BZ for each Matsubara frequency.
+//         std::function< double(double) > tmpFunctImag = [&](double k){
+//             return ( Gk( Gk._precomp_wn[ikn] + q._iwn, k + q._qx )(0,0) * Gk( Gk._precomp_wn[ikn], k )(0,0) ).imag();
+//         };
+//         std::function< double(double) > tmpFunctReal = [&](double k){
+//             return ( Gk( Gk._precomp_wn[ikn] + q._iwn, k + q._qx )(0,0) * Gk( Gk._precomp_wn[ikn], k )(0,0) ).real();
+//         };
+//         xi += ( integralsObj.integrate_simps(tmpFunctReal,-M_PI,M_PI,0.001) + im*integralsObj.integrate_simps(tmpFunctImag,-M_PI,M_PI,0.001) ); // 0.001 is enough!
+//     }
+//     xi *= 1.0/(Gk._beta*(2.0*M_PI)); /// Removed minus sign
+//     return xi;
+// }
         
 std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K_2D q) const{
     std::complex<double> xi=0.0+0.0*im;
@@ -248,7 +248,6 @@ std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K
         for (size_t kx=0; kx<Gk._kArr_l.size(); kx++){
             for (size_t ky=0; ky<Gk._kArr_l.size(); ky++){
                 xi += Gk(Gk._precomp_wn[ikn]+q._iwn,Gk._kArr_l[kx]+q._qx,Gk._kArr_l[ky]+q._qy)(0,0)*Gk(Gk._precomp_wn[ikn],Gk._kArr_l[kx],Gk._kArr_l[ky])(0,0);
-                xi += Gk(Gk._precomp_wn[ikn]+q._iwn,Gk._kArr_l[kx]+q._qx,Gk._kArr_l[ky]+q._qy)(1,1)*Gk(Gk._precomp_wn[ikn],Gk._kArr_l[kx],Gk._kArr_l[ky])(1,1);
             }
         }
     }
@@ -270,28 +269,39 @@ std::complex<double> Susceptibility::chisp(Hubbard::FunctorBuildGk& Gk, Hubbard:
     return suscept;
 }
 
-void Susceptibility::get_chi_1D(Hubbard::FunctorBuildGk& Gk, std::string filename_chi, std::string filename_chi0){
+std::tuple< std::complex<double>, std::complex<double> > Susceptibility::get_chi_1D(Hubbard::FunctorBuildGk& Gk, std::string filename_chi, std::string filename_chi0){
     /* Prints out in distinct files the imaginary values of the chi and chi0. */
     std::ofstream outputFileChi;
     std::ofstream outputFileChi0;
     std::complex<double> Suscep, Suscep0;
+    std::complex<double> TVSUSusChi0(0.0,0.0);
+    std::complex<double> TVSUSusChi(0.0,0.0);
+    std::tuple< std::complex<double>, std::complex<double> > suss;
     for (int k=0; k<=Gk._Nk; k++){
         Suscep = chisp(Gk,Hubbard::K_1D(Gk._kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
         Suscep0 = chi0(Gk,Hubbard::K_1D(Gk._kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
+        if ((k==0) || (k==Gk._Nk)){ // only keeping susceptibility at k=pi and -pi
+            TVSUSusChi+=Suscep;
+            TVSUSusChi0+=Suscep0;
+        }
         /* Saving imaginary part of the susceptibility */
         outputFileChi.open(filename_chi, std::ofstream::out | std::ofstream::app);
-        outputFileChi << 1.0*Suscep.imag() << " ";
+        outputFileChi << Suscep.imag() << " ";
         outputFileChi.close();
         // cout << "susceptibility at k: " << kArr_l[k] << " is " << Suscep << endl;
         outputFileChi0.open(filename_chi0, std::ofstream::out | std::ofstream::app);
         outputFileChi0 << Suscep0.imag() << " ";
         outputFileChi0.close();
     }
-    std::cout << "susceptibility: " << Suscep << std::endl;
+    TVSUSusChi0 *= 0.5;
+    TVSUSusChi *= 0.5;
+    std::cout << "susceptibility: " << TVSUSusChi << std::endl;
     outputFileChi.open(filename_chi, std::ofstream::out | std::ofstream::app);
     outputFileChi << "\n";
     outputFileChi.close();
     outputFileChi0.open(filename_chi0, std::ofstream::out | std::ofstream::app);
     outputFileChi0 << "\n";
     outputFileChi0.close();
+    suss = std::make_tuple(TVSUSusChi,TVSUSusChi0);
+    return suss;
 }

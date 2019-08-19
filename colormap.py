@@ -2,6 +2,7 @@ import numpy as np
 import getopt, sys
 import matplotlib.pyplot as plt
 import os
+import re
 
 plt.rc('text', usetex=True)
 plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
@@ -14,6 +15,7 @@ except getopt.GetoptError as err:
 
 output = None
 verbose = False
+print(opts)
 for o, a in opts:
     if o == "-v":
         verbose = True
@@ -40,13 +42,40 @@ with open(filename) as f:
 
 assert mesh.shape[0]==mesh.shape[1], "The data doesn't have \"square\" dimension"
 max_val = mesh.shape[0]-1
+imageDir="/Users/simardo/Documents/PhD/HF_cpp/Latex_docs/images/"
+
 def main():
 
+    opt_val=""
+    beg_sv_figs=""
+    if "Weights" in filename:
+        opt_val=r"$\operatorname{Im}\mathcal{G}^{\sigma}(\tilde{k})\mathcal{G}^{\sigma}(\tilde{k}-q)\mathcal{G}^{\bar{\sigma}}(\bar{k}+q)\mathcal{G}^{\bar{\sigma}}(\bar{k})$"
+        beg_sv_figs="Weights"
+    else:
+        opt_val=r"$\operatorname{Im}\Gamma^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)$"
+        beg_sv_figs="Gamma"
+
+    index_beta = filename.find("beta")
+    index_Nk = filename.find("Nk")
+    index_Nomega = filename.find("Nomega")
+    index_U = [m.start() for m in re.finditer("U",filename)][-1]
+
+    u = float(filename[index_U:].split("_")[1]) 
+    print("u: ", u, "\n")
+    beta = float(filename[index_beta:].split("_")[1])
+    print("beta: ", beta, "\n")
+
+    end_of_file = filename[index_Nk:]
+    if index_Nk<index_Nomega:
+        end_of_file = filename[index_Nk:].rstrip(".dat")
+    else:
+        end_of_file = filename[index_Nomega:].rstrip(".dat")
+
     fig, ax = plt.subplots(1, 1, figsize=(9, 9))
-    im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('viridis'))
-    ax.set_title(r"$\operatorname{Im}\chi_{\text{sp}}$ (ladder diagrams)")
-    ax.set_xlabel(r"$\tilde{k}$", fontsize=25, labelpad=10.0)
-    ax.set_ylabel(r"$\bar{k}$", fontsize=25, labelpad=10.0)
+    im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('magma'))
+    ax.set_title(opt_val+r" (ladder diagrams)")
+    ax.set_xlabel(r"$\bar{k}$", fontsize=25, labelpad=10.0)
+    ax.set_ylabel(r"$\tilde{k}$", fontsize=25, labelpad=10.0)
     ax.set_xticks(np.linspace(0,max_val,10),minor=False)
     ax.set_yticks(np.linspace(0,max_val,10),minor=False)
     ax.xaxis.set_tick_params(which='major',direction='inout',length=6)
@@ -56,7 +85,10 @@ def main():
     ax.set_xlim(left=0,right=max_val)
     ax.set_ylim(bottom=0,top=max_val)
     fig.colorbar(im, ax=ax)
-    plt.show()
+
+    #plt.gcf().set_size_inches(12,12)
+    plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.1f}_beta_{1:3.1f}_".format(u,beta)+end_of_file+".pdf")
+    #plt.show()
 
     return None
 

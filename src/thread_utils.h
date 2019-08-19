@@ -6,7 +6,7 @@
 #include <chrono>
 #include "green_utils.h"
 
-#define NUM_THREADS 4
+#define NUM_THREADS 3
 
 static std::mutex mutx;
 
