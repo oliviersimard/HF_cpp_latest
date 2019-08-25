@@ -58,10 +58,10 @@ class ThreadFunctor1D{
         
 
     private:
-        std::complex<double> _upper_level;
-        Hubbard::FunctorBuildGk _Gk;
-        Hubbard::K_1D _q;
-        arma::Mat< std::complex<double> > _ktb;
+        std::complex<double>& _upper_level;
+        Hubbard::FunctorBuildGk& _Gk;
+        Hubbard::K_1D& _q;
+        arma::Mat< std::complex<double> >& _ktb;
 };
 
 } /* ThreadFunctor */

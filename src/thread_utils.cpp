@@ -2,30 +2,17 @@
 
 using namespace ThreadFunctor;
 
-ThreadFunctor1D::ThreadFunctor1D(std::complex<double>& upper_level,Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D& q,arma::Mat< std::complex<double> >& mat){
-    this->_upper_level = upper_level;
-    this->_Gk = Gk;
-    this->_q = q;
-    this->_ktb = mat;
-}
+ThreadFunctor1D::ThreadFunctor1D(std::complex<double>& upper_level,Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D& q,arma::Mat< std::complex<double> >& mat) : 
+_upper_level(upper_level), _Gk(Gk), _q(q), _ktb(mat) {}
 
-ThreadFunctor1D::ThreadFunctor1D(ThreadFunctor1D&& rhs){
-    // Copying content of source object.
-    _Gk=rhs._Gk;
-    _q=rhs._q;
-    _ktb=rhs._ktb;
-    _upper_level=rhs._upper_level;
-
+ThreadFunctor1D::ThreadFunctor1D(ThreadFunctor1D&& rhs) : 
+_upper_level(std::move(rhs)._upper_level), _Gk(std::move(rhs)._Gk), _q(std::move(rhs)._q), _ktb(std::move(rhs)._ktb) {
     // Emptying the source object
     rhs.~ThreadFunctor1D();
 }
 
-ThreadFunctor1D::ThreadFunctor1D(const ThreadFunctor1D& rhs){
-    this->_Gk=rhs._Gk;
-    this->_ktb=rhs._ktb;
-    this->_q=rhs._q;
-    this->_upper_level=rhs._upper_level;
-}
+ThreadFunctor1D::ThreadFunctor1D(const ThreadFunctor1D& rhs) : 
+ _upper_level(rhs._upper_level), _Gk(rhs._Gk), _q(rhs._q), _ktb(rhs._ktb) {}
 
 void ThreadFunctor1D::operator()(int ktilde, int kbar){
     std::complex<double> tmp_val_kbar=0.0+0.0*im;

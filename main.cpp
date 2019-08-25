@@ -44,7 +44,7 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_sum_for_bubb"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_sum_for_bubb_imag_part_minus_in_bubble_pi_2"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd("chiAM/"); // The folder in data/ containing the data.
 
     #ifdef ONED

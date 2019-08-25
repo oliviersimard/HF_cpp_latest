@@ -62,7 +62,7 @@ if option == "s" or option == "n":
 
     len_u = data.shape[1]
     len_beta = data.shape[0]
-    u_arr = np.arange(u_init,u_max,u_step,dtype=float)
+    u_arr = np.arange(u_init,u_max+u_step,u_step,dtype=float)
     print("u lengths: ", len_u, len(u_arr))
     beta_arr = np.arange(beta_init,beta_max+beta_step,beta_step,dtype=int)
     temperature_arr = 1./beta_arr
@@ -76,18 +76,21 @@ if option == "s" or option == "n":
 
     color=iter(plt.cm.rainbow(np.linspace(0,2,len_u)))
 
-    if option == "s":
+    if option == "s": ## This part is to be used if Im part chosen. Won't work otherwise.
         u_vals = []
         for b in range(len_beta):
             # max_sus = np.max(data[b,:])  # Find the maximum y value
             # index_of_max_sus = np.where(data[b,:] == max_sus)
             # u_vals_el = u_arr[index_of_max_sus]
             # u_vals.append(u_vals_el)
-            AF_u_cut = np.array([uval for uval in data[b,:] if uval > 0.001],dtype=float)
-            index_of_AF_sus = np.where(data[b,:] == AF_u_cut[0])
-            print("index: ", index_of_AF_sus)
-            u_vals_el = u_arr[index_of_AF_sus]
-            u_vals.append(u_vals_el)
+            try:
+                AF_u_cut = np.array([uval for uval in data[b,:] if uval < -0.001],dtype=float)
+                index_of_AF_sus = np.where(data[b,:] == AF_u_cut[0])
+                print("index: ", index_of_AF_sus)
+                u_vals_el = u_arr[index_of_AF_sus]
+                u_vals.append(u_vals_el)
+            except IndexError as err:
+                print(err)
 
 
     if option == "s":
@@ -97,15 +100,23 @@ if option == "s" or option == "n":
         chi_val=""
         if "chio" in filename:
             chi_val="chio"
-            ylabel=r'$\chi^0_{\text{sp}}(\pi)$'
+            ylabel=r'$\chi^0(\pi)$'
         else:
             chi_val="chi"
-            ylabel=r'$\chi_{\text{sp}}(\pi)$'
+            ylabel=r'$\chi^{\sigma}_{\text{sp,b}}(\pi)$'
+
+        ImOrRe=""
+        if "imag" in filename:
+            ImOrRe=r"$\operatorname{Im}$"
+        elif "real" in filename:
+            ImOrRe=r"$\operatorname{Re}$"
+        else:
+            raise(ValueError("Can either be real or imaginary parts."))
 
         ax.grid(True)
         ax.set_title(r'RPA spin susceptibility ($\beta \in$ {0:3.1f},{1:3.1f})'.format(beta_init,beta_max), fontsize=20,y=1.04,loc='center')
         ax.set_xlabel(r'$U$', fontsize=20)
-        ax.set_ylabel(ylabel, fontsize=20)
+        ax.set_ylabel(ImOrRe+ylabel, fontsize=20)
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.9, box.height])
         # Put a legend to the right of the current axis
@@ -126,7 +137,8 @@ if option == "s" or option == "n":
 
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
-        plt.show()
+        plt.gcf().set_size_inches(12,9)
+        plt.savefig(imageDir+"n_AA_up_vs_U_{0:2.1f}_{1:2.1f}_{2:2.1f}_beta_{3:2.1f}_{4:2.1f}_{5:2.1f}_".format(u_init,u_step,u_max,beta_init,beta_step,beta_max)+end_of_file+".pdf")
 
     if option == "s":
         fig2, ax2 = plt.subplots()
@@ -139,14 +151,13 @@ if option == "s" or option == "n":
         ax2.set_ylabel(r"T",fontsize=20)
         ax2.plot(u_vals,temperature_arr,marker='o',markersize=5)
 
-        aa=0.21; bb=-0.0
+        aa=0.22; bb=-0.0
         u_vals_fit=fit_phase_diagram(u_vals,aa,bb)
-        ax2.plot(u_vals,u_vals_fit,marker='o',markersize=5,color="red",label='fit: a={0:4.1f}, b={1:4.1f}'.format(aa,bb))
+        ax2.plot(u_vals,u_vals_fit,marker='o',markersize=5,color="red",label='fit: a={0:4.2f}, b={1:4.2f}'.format(aa,bb))
 
         ax2.legend()
         plt.gcf().set_size_inches(12,9)
         plt.savefig(imageDir+"T_vs_U_phase_diagram_U_{0:2.1f}_{1:2.1f}_{2:2.1f}_beta_{3:2.1f}_{4:2.1f}_{5:2.1f}_".format(u_init,u_step,u_max,beta_init,beta_step,beta_max)+end_of_file+".pdf")
-        #plt.show()
 
 
 elif option == "k":
@@ -160,7 +171,7 @@ elif option == "k":
 
     len_k = data.shape[1]
     len_u = data.shape[0]
-    u_arr = np.arange(u_init,u_max,u_step,dtype=float)
+    u_arr = np.arange(u_init,u_max+u_step,u_step,dtype=float)
     print("u lengths: ", len_u, len(u_arr))
 
     assert len(u_arr)==len_u, "Error in size of arrays!! Check data size."
@@ -168,10 +179,21 @@ elif option == "k":
     chi_val=""
     if "Chi0" in filename:
         chi_val="chio"
-        ylabel=r'$\chi^0_{\text{sp}}(\mathbf{k})$'
+        ylabel=r'$\chi^0(\mathbf{k})$'
     else:
         chi_val="chi"
-        ylabel=r'$\chi_{\text{sp}}(\mathbf{k})$'
+        ylabel=r'$\chi^{\sigma}_{\text{sp,b}}(\mathbf{k})$'
+
+    im_or_re_val=""
+    ImOrRe=""
+    if "imag" in filename:
+        im_or_re_val="IM_"
+        ImOrRe=r"$\operatorname{Im}$"
+    elif "real" in filename:
+        im_or_re_val="RE_"
+        ImOrRe=r"$\operatorname{Re}$"
+    else:
+        raise(ValueError("Can either be real or imaginary parts."))
 
     def format_func(value, tick_number):
         # find number of multiples of pi/4
@@ -198,11 +220,11 @@ elif option == "k":
     color=iter(plt.cm.rainbow(np.linspace(0,1,len_u)))
 
     for l in range(len_u):
-        ax.plot(data[l,:],marker='s',markersize=3,color=next(color),label=r'$U={0:3.1f}$'.format(u_arr[l]))
+        ax.plot(data[l,:],marker='s',markersize=3,color=next(color),label=r'$U={0:3.2f}$'.format(u_arr[l]))
 
     ax.set_title(r'RPA spin susceptibility ($\beta={0:3}/t$)'.format(int(beta)),fontsize=20,y=1.04,loc='center')
     ax.set_xlabel(r'$\mathbf{k}$', fontsize=20)
-    ax.set_ylabel(ylabel, fontsize=20)
+    ax.set_ylabel(ImOrRe+ylabel, fontsize=20)
     ax.xaxis.set_tick_params(which='major',direction='inout',length=6)
     ax.yaxis.set_tick_params(which='major',direction='inout',length=6)
     ax.xaxis.set_major_formatter(plt.FuncFormatter(format_func))
@@ -213,9 +235,8 @@ elif option == "k":
     ax.legend(loc='center left', bbox_to_anchor=(1, 0.5),ncol=2)
 
     plt.gcf().set_size_inches(15,10)
-    plt.savefig(imageDir+"k_dependence_"+chi_val+"_U_{0:2.1f}_{1:2.1f}_{2:2.1f}_beta_{3:2.1f}_".format(u_init,u_step,u_max,beta)+end_of_file+".pdf")
+    plt.savefig(imageDir+"k_dependence_"+im_or_re_val+chi_val+"_U_{0:2.1f}_{1:2.1f}_{2:2.1f}_beta_{3:2.1f}_".format(u_init,u_step,u_max,beta)+end_of_file+".pdf")
     
-    #plt.show()
 
 else:
     raise(ValueError("Check --help for the options."))

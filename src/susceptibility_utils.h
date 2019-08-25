@@ -5,6 +5,7 @@
 #include "integral_utils.h"
 #include "thread_utils.h"
 #include <tuple>
+#include <algorithm> // For std::move
 
 class Susceptibility{ // The current-current susceptibility uses the +U in gamma, multiplied by the currents thereafter.
     public:
@@ -20,7 +21,7 @@ class Susceptibility{ // The current-current susceptibility uses the +U in gamma
         std::complex<double> gamma_oneD_spsp_full_middle(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D kbar,Hubbard::K_1D q) const;
         std::complex<double> chisp_full(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const;
         std::tuple< std::complex<double>, std::complex<double> > get_chi_1D(Hubbard::FunctorBuildGk& Gk, std::string filename_chi, std::string filename_chi0);
-
+        std::tuple< std::complex<double>, std::complex<double> > gamma_oneD_spsp_plotting(Hubbard::FunctorBuildGk& Gk,double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar,Hubbard::K_1D q) const;
 };
 
 #endif /* SUSCEPTIBILITY_H_ */

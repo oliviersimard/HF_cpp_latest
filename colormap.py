@@ -8,7 +8,7 @@ plt.rc('text', usetex=True)
 plt.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], "hf:v", ["help", "file="])
+    opts, args = getopt.getopt(sys.argv[1:], "hfc:v", ["help", "file=", "c="])
 except getopt.GetoptError as err:
     print(err) 
     sys.exit(2)
@@ -24,11 +24,22 @@ for o, a in opts:
     elif o in ("-f", "--file"):
         assert type(a)==str, "Wrong type of input command line!"
         filename = a
+    elif o in ("-c"):
+        i_or_r=int(a)
     else:
         assert False, "unhandled option"
 
 getSizeSquare = int(os.popen('head -n1 {0} | grep -o " " | wc -l'.format(filename)).read())
 mesh = np.empty(shape=(getSizeSquare,getSizeSquare))
+ImOrRe=""
+file_ImOrRe=""
+if i_or_r==0:
+    ImOrRe=r"$\operatorname{Re}$"
+    file_ImOrRe="_Re_"
+elif i_or_r==1:
+    ImOrRe=r"$\operatorname{Im}$"
+    file_ImOrRe="_Im_"
+
 with open(filename) as f:
     for k1,line in enumerate(f):
         if k1<getSizeSquare:
@@ -36,7 +47,7 @@ with open(filename) as f:
                 if "(" in el.strip("\n"):
                     print("el: ", el)
                     tup = tuple(float(i) for i in el.strip('()').split(','))
-                    mesh[k1,k2] = tup[1] ## Imaginary part of the susceptibility
+                    mesh[k1,k2] = tup[i_or_r] ## Imaginary part of the susceptibility if 1.
         else:
             break
 
@@ -49,10 +60,13 @@ def main():
     opt_val=""
     beg_sv_figs=""
     if "Weights" in filename:
-        opt_val=r"$\operatorname{Im}\mathcal{G}^{\sigma}(\tilde{k})\mathcal{G}^{\sigma}(\tilde{k}-q)\mathcal{G}^{\bar{\sigma}}(\bar{k}+q)\mathcal{G}^{\bar{\sigma}}(\bar{k})$"
+        opt_val=ImOrRe+r"$\mathcal{G}^{\sigma}(\tilde{k})\mathcal{G}^{\sigma}(\tilde{k}-q)\mathcal{G}^{\bar{\sigma}}(\bar{k}+q)\mathcal{G}^{\bar{\sigma}}(\bar{k})$"
         beg_sv_figs="Weights"
+    elif "Bubble" in filename:
+        opt_val=ImOrRe+r"$\mathcal{G}^{\sigma}(\tilde{k}+q-\tilde{q})\mathcal{G}^{\sigma}(\bar{k}+q-\tilde{q})$"
+        beg_sv_figs="Bubble"
     else:
-        opt_val=r"$\operatorname{Im}\Gamma^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)$"
+        opt_val=ImOrRe+r"$\Gamma^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)$"
         beg_sv_figs="Gamma"
 
     index_beta = filename.find("beta")
@@ -73,7 +87,7 @@ def main():
 
     fig, ax = plt.subplots(1, 1, figsize=(9, 9))
     im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('magma'))
-    ax.set_title(opt_val+r" (ladder diagrams)")
+    ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.1f}, $\beta=${1:2.1f}".format(u,beta))
     ax.set_xlabel(r"$\bar{k}$", fontsize=25, labelpad=10.0)
     ax.set_ylabel(r"$\tilde{k}$", fontsize=25, labelpad=10.0)
     ax.set_xticks(np.linspace(0,max_val,10),minor=False)
@@ -87,7 +101,7 @@ def main():
     fig.colorbar(im, ax=ax)
 
     #plt.gcf().set_size_inches(12,12)
-    plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.1f}_beta_{1:3.1f}_".format(u,beta)+end_of_file+".pdf")
+    plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.1f}_beta_{1:3.1f}_".format(u,beta)+end_of_file+file_ImOrRe+".pdf")
     #plt.show()
 
     return None

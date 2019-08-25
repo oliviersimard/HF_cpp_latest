@@ -54,7 +54,7 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
     std::complex<double> lower_level=0.0+0.0*im;
     for (int wttilde=0; wttilde<Gk._size; wttilde++){
         for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
-            lower_level += Gk(ktilde._iwn-Gk._precomp_qn[wttilde],ktilde._qx-Gk._kArr_l[qttilde])(0,0)*Gk((kbar+q)._iwn-Gk._precomp_qn[wttilde],(kbar+q)._qx-Gk._kArr_l[qttilde])(1,1);
+            lower_level += Gk((ktilde+q)._iwn-Gk._precomp_qn[wttilde],(ktilde+q)._qx-Gk._kArr_l[qttilde])(0,0)*Gk((kbar+q)._iwn-Gk._precomp_qn[wttilde],(kbar+q)._qx-Gk._kArr_l[qttilde])(1,1);
         }
     }
     lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
@@ -78,7 +78,7 @@ std::complex<double> Susceptibility::chispsp(Hubbard::FunctorBuildGk& Gk,Hubbard
                     std::complex<double> tmp_val = Gk(
                             Gk._precomp_wn[wtilde],Gk._kArr_l[ktilde]
                             )(0,0)*Gk(
-                            Gk._precomp_wn[wtilde]-q._iwn,Gk._kArr_l[ktilde]-q._qx
+                            Gk._precomp_wn[wtilde]+q._iwn,Gk._kArr_l[ktilde]+q._qx
                             )(0,0)*gamma_oneD_spsp( Gk, kt, kb, q )*Gk(
                             Gk._precomp_wn[wbar]+q._iwn,Gk._kArr_l[kbar]+q._qx
                             )(1,1)*Gk(
@@ -101,12 +101,26 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
     std::complex<double> lower_level=0.0+0.0*im;
     for (int wttilde=0; wttilde<Gk._size; wttilde++){
         for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
-            lower_level += Gk(wtilde-Gk._precomp_qn[wttilde],ktilde-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
+            lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktilde+q._qx-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
         }
     }
     lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
     lower_level += 1.0;
     return Gk._u/lower_level;
+}
+
+std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_oneD_spsp_plotting(Hubbard::FunctorBuildGk& Gk,double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar,Hubbard::K_1D q) const{ // q's contain bosonic Matsubara frequencies.
+    std::complex<double> lower_level=0.0+0.0*im, chi_bubble=0.0+0.0*im; // chi_bubble represents the lower bubble in the vertex function, not the total vertex function.
+    for (int wttilde=0; wttilde<Gk._size; wttilde++){
+        for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
+            lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktilde+q._qx-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
+        }
+    }
+    lower_level *= Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
+    chi_bubble = lower_level;
+    lower_level *= -1.0;
+    lower_level += 1.0;
+    return std::make_tuple(Gk._u/lower_level,chi_bubble);
 }
 
 #ifdef PARALLEL
@@ -152,7 +166,7 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
         else{
             std::vector<std::thread> tt(NUM_THREADS);
             for (int l=0; l<NUM_THREADS; l++){
-                int ltot=it+l; // Have to make sure spans over the whole array of k-space.
+                int ltot = it+l; // Have to make sure spans over the whole array of k-space.
                 int lkt = static_cast<int>(floor(ltot/Gk._kArr_l.size()));
                 int lkb = (ltot % Gk._kArr_l.size());
                 std::thread t(threadObj,lkt, lkb);
@@ -191,7 +205,7 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
                     std::complex<double> tmp_val = Gk(
                             Gk._precomp_wn[wtilde],Gk._kArr_l[ktilde]
                             )(0,0)*Gk(
-                            Gk._precomp_wn[wtilde]-q._iwn,Gk._kArr_l[ktilde]-q._qx
+                            Gk._precomp_wn[wtilde]+q._iwn,Gk._kArr_l[ktilde]+q._qx
                             )(0,0)*gamma_oneD_spsp( Gk, Gk._kArr_l[ktilde], Gk._precomp_wn[wtilde], Gk._kArr_l[kbar], Gk._precomp_wn[wbar], q )*Gk(
                             Gk._precomp_wn[wbar]+q._iwn,Gk._kArr_l[kbar]+q._qx
                             )(1,1)*Gk(
@@ -248,7 +262,7 @@ std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K
             //xi += Gk( Gk._precomp_wn[ikn] + q._iwn, Gk._kArr_l[k] + q._qx )(1,1) * Gk( Gk._precomp_wn[ikn], Gk._kArr_l[k] )(1,1); // Changed (0,0) for (1,1)
         }
     }
-    xi *= 1.0/(Gk._beta*Gk._Nk); /// Removed minus sign
+    xi *= -1.0/(Gk._beta*Gk._Nk); /// Included minus sign
     return xi;
 }
 
@@ -292,7 +306,11 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::get_chi
     for (int k=0; k<=Gk._Nk; k++){
         Suscep = chisp(Gk,Hubbard::K_1D(Gk._kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
         Suscep0 = chi0(Gk,Hubbard::K_1D(Gk._kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
-        if ((k==0) || (k==Gk._Nk)){ // only keeping susceptibility at k=pi and -pi
+        // if ((k==0) || (k==Gk._Nk)){ // only keeping susceptibility at k=pi and -pi
+        //     TVSUSusChi+=Suscep;
+        //     TVSUSusChi0+=Suscep0;
+        // }
+        if (k == (int)(Gk._Nk/4)){ // only keeping susceptibility at k=pi and -pi
             TVSUSusChi+=Suscep;
             TVSUSusChi0+=Suscep0;
         }
@@ -305,9 +323,9 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::get_chi
         outputFileChi0 << Suscep0.imag() << " ";
         outputFileChi0.close();
     }
-    TVSUSusChi0 *= 0.5;
-    TVSUSusChi *= 0.5;
-    std::cout << "susceptibility: " << TVSUSusChi << std::endl;
+    // TVSUSusChi0 *= 0.5;
+    // TVSUSusChi *= 0.5;
+    std::cout << "susceptibility chi: " << TVSUSusChi << " vs chi0: " << TVSUSusChi0 << std::endl;
     outputFileChi.open(filename_chi, std::ofstream::out | std::ofstream::app);
     outputFileChi << "\n";
     outputFileChi.close();

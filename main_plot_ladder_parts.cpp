@@ -23,8 +23,8 @@ class ThreadWrapper{
         complex<double> gamma_oneD_spsp(double ktilde,complex<double> wtilde,double kbar,complex<double> wbar);
         void join_all(vector<thread>& grp);
     private:
-        Hubbard::FunctorBuildGk _Gk;
-        Hubbard::K_1D _q;
+        Hubbard::FunctorBuildGk& _Gk;
+        Hubbard::K_1D& _q;
         arma::cx_dmat::iterator _ktb;
         arma::cx_dmat::iterator _ktbW;
 };
@@ -55,7 +55,7 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_parallel"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_serial_first_fermionic_freq"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd(""); // The folder in data/ containing the data.
 
     #ifdef ONED
@@ -71,6 +71,7 @@ int main(int argc, char** argv){
     ofstream outputFile;
     ofstream outputFileChispspWeights;
     ofstream outputFileChispspGamma;
+    ofstream outputFileChispspGammaBubble;
     for (double beta=beta_init; beta<=beta_max; beta+=beta_step){
         
         for (double u=u_init; u<=u_max; u+=u_step) {
@@ -78,6 +79,7 @@ int main(int argc, char** argv){
             // Filenames for the file outputs of the susceptibilities chi and chi0.
             string fileOutputChispspWeigths("data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
             string fileOutputChispspGamma("data/"+frontEnd+"ChispspGamma_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+            string fileOutputChispspGammaBubble("data/"+frontEnd+"ChispspBubble_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
             
             mu=u/2.0;
             ndo=ndo_initial;
@@ -125,7 +127,8 @@ int main(int argc, char** argv){
                             int lkb = (ltot % kArr_l.size());
                             cout << "lkt: " << lkt << " lkb: " << lkb << "\n";
                             thread t(threadObj,lkt,lkb,beta);
-                            tt[l]=move(t);
+                            //tt[l]=move(t);
+                            tt.push_back(static_cast<thread&&>(t));
                             // tt[l]=thread(threadObj,lkt,lkb,beta);
                             cout << "hola" << ltot << "\n";
                         }
@@ -164,34 +167,47 @@ int main(int argc, char** argv){
                 cout << "ktilde: " << ktilde << endl;
                 for (int kbar=0; kbar<kArr_l.size(); kbar++){
                     cout << "kbar: " << kbar << endl;
-                    complex<double> tmp_val_kt_kb(0.0,0.0);
+                    complex<double> tmp_val_kt_kb(0.0,0.0), tmp_val_kt_kb_bubble(0.0,0.0);
                     complex<double> tmp_val_weigths(0.0,0.0);
                     for (int wtilde=0; wtilde<Gup_k.size(); wtilde++){
                         for (int wbar=0; wbar<Gup_k.size(); wbar++){
-                            tmp_val_kt_kb += susObj.gamma_oneD_spsp(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
-                            tmp_val_weigths += u_ndo_c(
+                            if ( (wtilde==0) && (wbar==0) ){ // setting some conditions for the Matsubara frequencies (lowest frequencies and weights modified (beta)). same k grid plotted!
+                                cout << wtilde << " and wbar " << wbar << endl;
+                                tmp_val_kt_kb += get<0>(susObj.gamma_oneD_spsp_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq));
+                                tmp_val_kt_kb_bubble += get<1>(susObj.gamma_oneD_spsp_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq));
+                                tmp_val_weigths += u_ndo_c(
                                     complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[ktilde]
                                     )(0,0)*u_ndo_c(
-                                    complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta)-qq._iwn,kArr_l[ktilde]-qq._qx
+                                    complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta)+qq._iwn,kArr_l[ktilde]+qq._qx
                                     )(0,0)*u_ndo_c(
                                     complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta)+qq._iwn,kArr_l[kbar]+qq._qx
                                     )(1,1)*u_ndo_c(
                                     complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),kArr_l[kbar]
                                     )(1,1);
+                            }
                         } 
                     }
+                    // tmp_val_weigths *= 1.0/(beta)/(beta);
+                    // tmp_val_kt_kb *= 1.0/(beta)/(beta);
+                    // tmp_val_kt_kb_bubble *= 1.0/(beta)/(beta);
                     outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
                     outputFileChispspWeights.open(fileOutputChispspWeigths, ofstream::out | ofstream::app);
+                    outputFileChispspGammaBubble.open(fileOutputChispspGammaBubble, ofstream::out | ofstream::app);
                     outputFileChispspGamma << tmp_val_kt_kb << " ";
+                    outputFileChispspGammaBubble << tmp_val_kt_kb_bubble << " ";
                     outputFileChispspWeights << tmp_val_weigths << " ";
                     outputFileChispspGamma.close();
+                    outputFileChispspGammaBubble.close();
                     outputFileChispspWeights.close();
                 }
                 outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
+                outputFileChispspGammaBubble.open(fileOutputChispspGammaBubble, ofstream::out | ofstream::app);
                 outputFileChispspWeights.open(fileOutputChispspWeigths, ofstream::out | ofstream::app);
                 outputFileChispspGamma << "\n";
+                outputFileChispspGammaBubble << "\n";
                 outputFileChispspWeights << "\n";
                 outputFileChispspGamma.close();
+                outputFileChispspGammaBubble.close();
                 outputFileChispspWeights.close();
 
             }
@@ -244,19 +260,11 @@ inline bool file_exists (const string& filename) {
 
 #ifdef PARALLEL
 
-ThreadWrapper::ThreadWrapper(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D& q,arma::cx_dmat::iterator matPtr,arma::cx_dmat::iterator matWPtr){
-    this->_Gk = Gk;
-    this->_q = q;
-    this->_ktb = matPtr;
-    this->_ktbW = matWPtr;
-}
+ThreadWrapper::ThreadWrapper(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D& q,arma::cx_dmat::iterator matPtr,arma::cx_dmat::iterator matWPtr) : 
+_Gk(Gk), _q(q), _ktb(matPtr), _ktbW(matWPtr) {}
 
-ThreadWrapper::ThreadWrapper(Hubbard::FunctorBuildGk& Gk, Hubbard::K_1D& q){
-    this->_Gk = Gk;
-    this->_q = q;
-    this->_ktb = nullptr;
-    this->_ktbW = nullptr;
-}
+ThreadWrapper::ThreadWrapper(Hubbard::FunctorBuildGk& Gk, Hubbard::K_1D& q) : 
+_Gk(Gk), _q(q), _ktb(nullptr), _ktbW(nullptr) {}
 
 void ThreadWrapper::operator()(int ktilde, int kbar, double beta){
     complex<double> tmp_val_kt_kb(0.0,0.0);
