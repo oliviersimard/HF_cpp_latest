@@ -109,15 +109,46 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
     return Gk._u/lower_level;
 }
 
+std::complex<double> Susceptibility::gamma_twoD_spsp(Hubbard::FunctorBuildGk& Gk,double ktildex,double ktildey,std::complex<double> wtilde,double kbarx,double kbary,std::complex<double> wbar,Hubbard::K_2D q) const{ // q's contain bosonic Matsubara frequencies.
+    std::complex<double> lower_level=0.0+0.0*im;
+    for (int wttilde=0; wttilde<Gk._size; wttilde++){
+        for (size_t qttildey=0; qttildey<Gk._kArr_l.size(); qttildey++){
+            for (size_t qttildex=0; qttildex<Gk._kArr_l.size(); qttildex++){
+                lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktildex+q._qx-Gk._kArr_l[qttildex],ktildey+q._qy-Gk._kArr_l[qttildey])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbarx+q._qx-Gk._kArr_l[qttildex],kbary+q._qy-Gk._kArr_l[qttildey])(1,1);
+            }
+        }
+    }
+    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign
+    lower_level += 1.0;
+    return Gk._u/lower_level;
+}
+
 std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_oneD_spsp_plotting(Hubbard::FunctorBuildGk& Gk,double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar,Hubbard::K_1D q) const{ // q's contain bosonic Matsubara frequencies.
     std::complex<double> lower_level=0.0+0.0*im, chi_bubble=0.0+0.0*im; // chi_bubble represents the lower bubble in the vertex function, not the total vertex function.
     for (int wttilde=0; wttilde<Gk._size; wttilde++){
         for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
-            lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktilde+q._qx-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
+            //lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktilde+q._qx-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
+            lower_level += Gk(-(wtilde+q._iwn-Gk._precomp_qn[wttilde]),-Gk._kArr_l[qttilde])(0,0)*Gk(-(wbar+q._iwn-Gk._precomp_qn[wttilde]),-(Gk._kArr_l[qttilde]+kbar-ktilde))(1,1);
         }
     }
-    lower_level *= Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
-    chi_bubble = lower_level;
+    lower_level *= -2.0*Gk._u/(Gk._beta*Gk._Nk); //factor 2 for the spin and minus sign added
+    chi_bubble = lower_level; 
+    lower_level *= -1.0;
+    lower_level += 1.0;
+    return std::make_tuple(Gk._u/lower_level,chi_bubble);
+}
+
+std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_twoD_spsp_plotting(Hubbard::FunctorBuildGk& Gk,double kbarx_m_tildex,double kbary_m_tildey,std::complex<double> wtilde,std::complex<double> wbar) const{ // q's contain bosonic Matsubara frequencies.
+    std::complex<double> lower_level=0.0+0.0*im, chi_bubble=0.0+0.0*im; // chi_bubble represents the lower bubble in the vertex function, not the total vertex function.
+    for (int wttilde=0; wttilde<Gk._size; wttilde++){
+        for (size_t qttildey=0; qttildey<Gk._kArr_l.size(); qttildey++){
+            for (size_t qttildex=0; qttildex<Gk._kArr_l.size(); qttildex++){ // the change of variable only applie to k-space, due to periodicity modulo 2pi.
+                lower_level += Gk(-(wtilde-Gk._precomp_qn[wttilde]),-Gk._kArr_l[qttildex],-Gk._kArr_l[qttildey])(0,0)*Gk(-(wbar-Gk._precomp_qn[wttilde]),-(Gk._kArr_l[qttildex]+kbarx_m_tildex),-(Gk._kArr_l[qttildey]+kbary_m_tildey))(1,1);
+            }
+        }
+    }
+    lower_level *= -2.0*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); //factor 2 for the spin and minus sign added
+    chi_bubble = lower_level; 
     lower_level *= -1.0;
     lower_level += 1.0;
     return std::make_tuple(Gk._u/lower_level,chi_bubble);
@@ -262,7 +293,7 @@ std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K
             //xi += Gk( Gk._precomp_wn[ikn] + q._iwn, Gk._kArr_l[k] + q._qx )(1,1) * Gk( Gk._precomp_wn[ikn], Gk._kArr_l[k] )(1,1); // Changed (0,0) for (1,1)
         }
     }
-    xi *= -1.0/(Gk._beta*Gk._Nk); /// Included minus sign
+    xi *= -2.0/(Gk._beta*Gk._Nk); /// Included minus sign and factor 2 for the spin
     return xi;
 }
 
@@ -277,7 +308,7 @@ std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K
             }
         }
     }
-    xi *= 1.0/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign
+    xi *= -2.0/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign and factor 2 for the spin
     return xi;
 }
 
@@ -306,25 +337,66 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::get_chi
     for (int k=0; k<=Gk._Nk; k++){
         Suscep = chisp(Gk,Hubbard::K_1D(Gk._kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
         Suscep0 = chi0(Gk,Hubbard::K_1D(Gk._kArr_l[k],0.0+0.0*im)); // Bosonic Matsubara frequency!
-        // if ((k==0) || (k==Gk._Nk)){ // only keeping susceptibility at k=pi and -pi
-        //     TVSUSusChi+=Suscep;
-        //     TVSUSusChi0+=Suscep0;
-        // }
-        if (k == (int)(Gk._Nk/4)){ // only keeping susceptibility at k=pi and -pi
+        if ((k==0) || (k==Gk._Nk)){ // only keeping susceptibility at k=pi and -pi
             TVSUSusChi+=Suscep;
             TVSUSusChi0+=Suscep0;
         }
+        // if (k == (int)(Gk._Nk/4)){ // only keeping susceptibility at k=pi and -pi
+        //     TVSUSusChi+=Suscep;
+        //     TVSUSusChi0+=Suscep0;
+        // }
         /* Saving imaginary part of the susceptibility */
         outputFileChi.open(filename_chi, std::ofstream::out | std::ofstream::app);
-        outputFileChi << Suscep.imag() << " ";
+        outputFileChi << Suscep.real() << " ";
         outputFileChi.close();
         // cout << "susceptibility at k: " << kArr_l[k] << " is " << Suscep << endl;
         outputFileChi0.open(filename_chi0, std::ofstream::out | std::ofstream::app);
-        outputFileChi0 << Suscep0.imag() << " ";
+        outputFileChi0 << Suscep0.real() << " ";
         outputFileChi0.close();
     }
-    // TVSUSusChi0 *= 0.5;
-    // TVSUSusChi *= 0.5;
+    TVSUSusChi0 *= 0.5;
+    TVSUSusChi *= 0.5;
+    std::cout << "susceptibility chi: " << TVSUSusChi << " vs chi0: " << TVSUSusChi0 << std::endl;
+    outputFileChi.open(filename_chi, std::ofstream::out | std::ofstream::app);
+    outputFileChi << "\n";
+    outputFileChi.close();
+    outputFileChi0.open(filename_chi0, std::ofstream::out | std::ofstream::app);
+    outputFileChi0 << "\n";
+    outputFileChi0.close();
+    suss = std::make_tuple(TVSUSusChi,TVSUSusChi0);
+    return suss;
+}
+
+std::tuple< std::complex<double>, std::complex<double> > Susceptibility::get_chi_2D(Hubbard::FunctorBuildGk& Gk, std::string filename_chi, std::string filename_chi0){
+    /* Prints out in distinct files the imaginary values of the chi and chi0. */
+    std::ofstream outputFileChi;
+    std::ofstream outputFileChi0;
+    std::complex<double> Suscep, Suscep0;
+    std::complex<double> TVSUSusChi0(0.0,0.0);
+    std::complex<double> TVSUSusChi(0.0,0.0);
+    std::tuple< std::complex<double>, std::complex<double> > suss;
+    for (int ky=0; ky<=Gk._Nk; ky++){
+        for (int kx=0; kx<=Gk._Nk; kx++){
+            Suscep = chisp(Gk,Hubbard::K_2D(Gk._kArr_l[kx],Gk._kArr_l[ky],0.0+0.0*im)); // Bosonic Matsubara frequency!
+            Suscep0 = chi0(Gk,Hubbard::K_2D(Gk._kArr_l[kx],Gk._kArr_l[ky],0.0+0.0*im)); // Bosonic Matsubara frequency!
+            if ((kx==0) || (kx==Gk._Nk)){ // only keeping susceptibility at k=pi and -pi
+                if ((ky==0) || (ky==Gk._Nk)){
+                    TVSUSusChi+=Suscep;
+                    TVSUSusChi0+=Suscep0;
+                }
+            }
+            /* Saving imaginary part of the susceptibility */
+            outputFileChi.open(filename_chi, std::ofstream::out | std::ofstream::app); // Saves the whole k-space on one line for each U (\n) at a given beta.
+            outputFileChi << Suscep << " ";                                     // Thus the lines of file are of size N_kx X N_ky.
+            outputFileChi.close();
+            // cout << "susceptibility at k: " << kArr_l[k] << " is " << Suscep << endl;
+            outputFileChi0.open(filename_chi0, std::ofstream::out | std::ofstream::app);
+            outputFileChi0 << Suscep0 << " ";
+            outputFileChi0.close();
+        }
+    }
+    TVSUSusChi0 *= 0.25;
+    TVSUSusChi *= 0.25;
     std::cout << "susceptibility chi: " << TVSUSusChi << " vs chi0: " << TVSUSusChi0 << std::endl;
     outputFileChi.open(filename_chi, std::ofstream::out | std::ofstream::app);
     outputFileChi << "\n";

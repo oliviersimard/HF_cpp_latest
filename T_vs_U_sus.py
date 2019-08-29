@@ -10,7 +10,20 @@ plt.rcParams["font.size"] = 16
 plt.rcParams["text.latex.preamble"]=[r"\usepackage[charter]{mathdesign}\usepackage{amsmath}"]
 
 def fit_phase_diagram(u, a, b):
-    return np.exp(-1.0/(a*u))+b
+    return np.exp(-1.0/(a*u+b))
+
+def linear_fit_function(u,a,b):
+    return a*u+b
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "hfo", ["help", "file=", "option="])
@@ -33,7 +46,7 @@ for o, a in opts:
         assert type(a) == str, "Wrong type of entry: must be string!"
         option=a
     else:
-        assert False, "unhandled option."
+        assert False, bcolors.FAIL+"unhandled option."+bcolors.ENDC
 
 data = np.genfromtxt(filename,dtype=float,delimiter=" ")
 
@@ -49,6 +62,7 @@ else:
     end_of_file = filename[index_Nomega:].rstrip(".dat")
 
 imageDir="/Users/simardo/Documents/PhD/HF_cpp/Latex_docs/images/"
+rough_phase_diagram=False
 
 ## Have to change this depending on the file. Has been automated using REGEX.
 if option == "s" or option == "n":
@@ -58,7 +72,7 @@ if option == "s" or option == "n":
     beta_init = float(filename[index_beta:].split("_")[1]); beta_step = float(filename[index_beta:].split("_")[2]); beta_max = float(filename[index_beta:].split("_")[3])
     print("beta_init: ", beta_init, "beta_step: ", beta_step, "beta_max: ", beta_max, "\n")
 
-    print("data shape: ", data.shape)
+    print(bcolors.OKBLUE+"data shape: "+bcolors.ENDC, data.shape)
 
     len_u = data.shape[1]
     len_beta = data.shape[0]
@@ -76,21 +90,27 @@ if option == "s" or option == "n":
 
     color=iter(plt.cm.rainbow(np.linspace(0,2,len_u)))
 
-    if option == "s": ## This part is to be used if Im part chosen. Won't work otherwise.
+    if option == "s": ## This part is to be used if Im part chosen. Won't work otherwise. Mean_chi* files here.
         u_vals = []
-        for b in range(len_beta):
-            # max_sus = np.max(data[b,:])  # Find the maximum y value
-            # index_of_max_sus = np.where(data[b,:] == max_sus)
-            # u_vals_el = u_arr[index_of_max_sus]
-            # u_vals.append(u_vals_el)
-            try:
-                AF_u_cut = np.array([uval for uval in data[b,:] if uval < -0.001],dtype=float)
-                index_of_AF_sus = np.where(data[b,:] == AF_u_cut[0])
-                print("index: ", index_of_AF_sus)
-                u_vals_el = u_arr[index_of_AF_sus]
-                u_vals.append(u_vals_el)
-            except IndexError as err:
-                print(err)
+        if rough_phase_diagram and "real" in filename:
+            for b in range(len_beta):
+                # max_sus = np.max(data[b,:])  # Find the maximum y value
+                # index_of_max_sus = np.where(data[b,:] == max_sus)
+                # u_vals_el = u_arr[index_of_max_sus]
+                # u_vals.append(u_vals_el)
+                try:
+                    AF_u_cut = np.array([uval for uval in data[b,:] if uval < -0.001],dtype=float)
+                    index_of_AF_sus = np.where(data[b,:] == AF_u_cut[0])
+                    print("index: ", index_of_AF_sus)
+                    u_vals_el = u_arr[index_of_AF_sus]
+                    u_vals.append(u_vals_el)
+                except IndexError as err:
+                    print(err)
+        elif not rough_phase_diagram and "real" in filename:
+            for b in range(len_beta):
+                u_vals.append(1.0/data[b,:][0]) # Simply using the fact that 1-U\chi_0=0 at the denominator.
+        else:
+            print(bcolors.WARNING+"Achtung: To print the phase diagram, you have to pass in the real part of the bubble susceptibility."+bcolors.ENDC)
 
 
     if option == "s":
@@ -103,7 +123,7 @@ if option == "s" or option == "n":
             ylabel=r'$\chi^0(\pi)$'
         else:
             chi_val="chi"
-            ylabel=r'$\chi^{\sigma}_{\text{sp,b}}(\pi)$'
+            ylabel=r'$\chi_{\text{sp,b}}(\pi)$'
 
         ImOrRe=""
         if "imag" in filename:
@@ -141,23 +161,35 @@ if option == "s" or option == "n":
         plt.savefig(imageDir+"n_AA_up_vs_U_{0:2.1f}_{1:2.1f}_{2:2.1f}_beta_{3:2.1f}_{4:2.1f}_{5:2.1f}_".format(u_init,u_step,u_max,beta_init,beta_step,beta_max)+end_of_file+".pdf")
 
     if option == "s":
-        fig2, ax2 = plt.subplots()
-        ax2.grid(True)
+        if "real" in filename:
+            fig2, axs = plt.subplots(2,1,sharex=True)
+            axs[0].grid(True)
+            axs[1].grid(True)
 
-        u_vals=np.asarray(u_vals)
-        print("temperature_arr: ",type(temperature_arr)," ",type(u_vals))
-        ax2.set_title(r"$T$ vs $U$ (1D)",fontsize=20,y=1.04,loc='center')
-        ax2.set_xlabel(r"U",fontsize=20)
-        ax2.set_ylabel(r"T",fontsize=20)
-        ax2.plot(u_vals,temperature_arr,marker='o',markersize=5)
+            popt, pcov = curve_fit(linear_fit_function,u_vals,-1.0/np.log(temperature_arr),p0=[0.22,0.0],method="lm")
 
-        aa=0.22; bb=-0.0
-        u_vals_fit=fit_phase_diagram(u_vals,aa,bb)
-        ax2.plot(u_vals,u_vals_fit,marker='o',markersize=5,color="red",label='fit: a={0:4.2f}, b={1:4.2f}'.format(aa,bb))
+            plt.subplots_adjust(hspace=0.03)
+            u_vals=np.asarray(u_vals)
+            print("temperature_arr: ",type(temperature_arr)," ",type(u_vals))
+            axs[0].set_title(r"$T$ vs $U$ (1D)",fontsize=20,y=1.04,loc='center')
+            axs[0].set_ylabel(r"T",fontsize=20)
+            axs[0].plot(u_vals,temperature_arr,marker='o',markersize=5)
+            axs[0].plot(u_vals,fit_phase_diagram(u_vals,*popt),marker='o',markersize=5,color="red",label='fit exp: a={0:4.2f}, b={1:4.2f}'.format(*popt))
+            axs[0].annotate(r"$T(U)\propto e^{-\frac{1}{aU+b}}$", xy=(1.2,0.15), xytext=(1.2,0.15))
+            axs[0].legend()
 
-        ax2.legend()
-        plt.gcf().set_size_inches(12,9)
-        plt.savefig(imageDir+"T_vs_U_phase_diagram_U_{0:2.1f}_{1:2.1f}_{2:2.1f}_beta_{3:2.1f}_{4:2.1f}_{5:2.1f}_".format(u_init,u_step,u_max,beta_init,beta_step,beta_max)+end_of_file+".pdf")
+            axs[1].plot(u_vals,-1.0/np.log(temperature_arr),marker='o',markersize=5)
+
+            # aa=0.22; bb=-0.0
+            # u_vals_fit=fit_phase_diagram(u_vals,aa,bb)
+            axs[1].plot(u_vals,linear_fit_function(u_vals,*popt),marker='o',markersize=5,color="red",label='linear fit: a={0:4.2f}, b={1:4.2f}'.format(*popt))
+            axs[1].set_ylabel(r"$-\frac{1}{\ln{T}}$",fontsize=20)
+            axs[1].set_xlabel(r"U",fontsize=20)
+            axs[1].annotate(r"$T(U)\propto aU+b$", xy=(1.2,0.5), xytext=(1.2,0.5))
+            axs[1].legend()
+
+            plt.gcf().set_size_inches(12,9)
+            plt.savefig(imageDir+"T_vs_U_phase_diagram_U_{0:2.1f}_{1:2.1f}_{2:2.1f}_beta_{3:2.1f}_{4:2.1f}_{5:2.1f}_rough_diag_{6}_".format(u_init,u_step,u_max,beta_init,beta_step,beta_max,rough_phase_diagram)+end_of_file+".pdf")
 
 
 elif option == "k":
@@ -171,7 +203,7 @@ elif option == "k":
 
     len_k = data.shape[1]
     len_u = data.shape[0]
-    u_arr = np.arange(u_init,u_max+u_step,u_step,dtype=float)
+    u_arr = np.arange(u_init,u_max,u_step,dtype=float)
     print("u lengths: ", len_u, len(u_arr))
 
     assert len(u_arr)==len_u, "Error in size of arrays!! Check data size."
@@ -182,7 +214,7 @@ elif option == "k":
         ylabel=r'$\chi^0(\mathbf{k})$'
     else:
         chi_val="chi"
-        ylabel=r'$\chi^{\sigma}_{\text{sp,b}}(\mathbf{k})$'
+        ylabel=r'$\chi_{\text{sp,b}}(\mathbf{k})$'
 
     im_or_re_val=""
     ImOrRe=""

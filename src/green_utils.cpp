@@ -71,8 +71,10 @@ arma::Mat< std::complex<double> > FunctorBuildGk::buildGkAA_2D(int j, double mu,
 }
 
 arma::Mat< std::complex<double> > FunctorBuildGk::buildGkAA_2D_w(std::complex<double> w, double mu, double u, double ndo, double kx, double ky){
-    statMat(0,0) = 1.0/( w + mu - u*ndo - epsk2D(kx,ky)*epsk2D(kx,ky)/( w + mu - u*(1.0-ndo) ) ); // G^{AA}_{up} or G^{BB}_{down}
-    statMat(1,1) = 1.0/( w + mu - u*(1.0-ndo) - epsk2D(kx,ky)*epsk2D(kx,ky)/( w + mu - u*(ndo) ) ); // G^{AA}_{down} or G^{BB}_{up}
+    // statMat(0,0) = 1.0/( w + mu - u*ndo - epsk2D(kx,ky)*epsk2D(kx,ky)/( w + mu - u*(1.0-ndo) ) ); // G^{AA}_{up} or G^{BB}_{down}
+    // statMat(1,1) = 1.0/( w + mu - u*(1.0-ndo) - epsk2D(kx,ky)*epsk2D(kx,ky)/( w + mu - u*(ndo) ) ); // G^{AA}_{down} or G^{BB}_{up}
+    statMat(0,0) = 1.0/( w + mu - u*ndo - epsk2D(kx,ky) ); // G^{AA}_{up} or G^{BB}_{down}
+    statMat(1,1) = 1.0/( w + mu - u*(1.0-ndo) - epsk2D(kx,ky) ); // G^{AA}_{down} or G^{BB}_{up}
     statMat(0,1) = 0.0+0.0*im; statMat(1,0) = 0.0+0.0*im;
     return statMat;
 }

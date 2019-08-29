@@ -63,7 +63,7 @@ def main():
         opt_val=ImOrRe+r"$\mathcal{G}^{\sigma}(\tilde{k})\mathcal{G}^{\sigma}(\tilde{k}-q)\mathcal{G}^{\bar{\sigma}}(\bar{k}+q)\mathcal{G}^{\bar{\sigma}}(\bar{k})$"
         beg_sv_figs="Weights"
     elif "Bubble" in filename:
-        opt_val=ImOrRe+r"$\mathcal{G}^{\sigma}(\tilde{k}+q-\tilde{q})\mathcal{G}^{\sigma}(\bar{k}+q-\tilde{q})$"
+        opt_val=ImOrRe+r"$U\mathcal{G}^{\sigma}(\tilde{k}+q)\mathcal{G}^{\sigma}(\bar{k}+q)$"
         beg_sv_figs="Bubble"
     else:
         opt_val=ImOrRe+r"$\Gamma^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)$"
@@ -101,7 +101,7 @@ def main():
     fig.colorbar(im, ax=ax)
 
     #plt.gcf().set_size_inches(12,12)
-    plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.1f}_beta_{1:3.1f}_".format(u,beta)+end_of_file+file_ImOrRe+".pdf")
+    plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.2f}_beta_{1:3.2f}_".format(u,beta)+end_of_file+file_ImOrRe+".pdf")
     #plt.show()
 
     return None
