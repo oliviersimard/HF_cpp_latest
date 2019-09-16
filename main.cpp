@@ -10,7 +10,7 @@ double funct(double x){
 
 using namespace std;
 
-// #define ONED
+#define ONED
 
 int main(int argc, char** argv){
 
@@ -44,7 +44,7 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_sum_for_bubb_real_part_minus_in_bubble"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_sum_for_bubb_imag_part_minus_in_bubble"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd("chiAM/"); // The folder in data/ containing the data.
 
     #ifdef ONED
@@ -103,8 +103,8 @@ int main(int argc, char** argv){
             chis=susObj.get_chi_1D(u_ndo_c,fileOutputChi,fileOutputChi0); // Prints out chi and chi0 into files. Eventually add a boolean value to select this as option in params.json.
             outputFileMeanChi.open(fileOutputMeanChi, ofstream::out | ofstream::app);
             outputFileMeanChi0.open(fileOutputMeanChi0, ofstream::out | ofstream::app);
-            outputFileMeanChi << get<0>(chis).real() << " ";
-            outputFileMeanChi0 << get<1>(chis).real() << " ";
+            outputFileMeanChi << get<0>(chis).imag() << " ";
+            outputFileMeanChi0 << get<1>(chis).imag() << " ";
             outputFileMeanChi.close();
             outputFileMeanChi0.close();
             /* Getting G(\tau) for each value */
@@ -143,13 +143,13 @@ int main(int argc, char** argv){
             outputFileGtau.close();
             #endif
             
-            // outputFile.open(fileOutput, ofstream::out | ofstream::app);
-            // outputFile << u_ndo_c.get_ndo() << " ";
-            // outputFile.close();
+            outputFile.open(fileOutput, ofstream::out | ofstream::app);
+            outputFile << u_ndo_c.get_ndo() << " ";
+            outputFile.close();
         }
-        // outputFile.open(fileOutput, ofstream::out | ofstream::app);
-        // outputFile << "\n";
-        // outputFile.close();
+        outputFile.open(fileOutput, ofstream::out | ofstream::app);
+        outputFile << "\n";
+        outputFile.close();
         outputFileMeanChi.open(fileOutputMeanChi, ofstream::out | ofstream::app);
         outputFileMeanChi << "\n";
         outputFileMeanChi.close();

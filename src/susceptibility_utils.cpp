@@ -2,50 +2,47 @@
 
 /* Functions entering the full spin susceptibility. */
 
-std::complex<double> Susceptibility::gamma_oneD_spsp_full_lower(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D ktilde,Hubbard::K_1D kbar,Hubbard::K_1D qtilde,Hubbard::K_1D q) const{
+std::complex<double> Susceptibility::gamma_oneD_spsp_full_lower(Hubbard::FunctorBuildGk& Gk,double qp,double kbar,std::complex<double> iqnp,std::complex<double> wbar) const{
     std::complex<double> lower_level=0.0+0.0*im;
-    for (int iqnttilde=0; iqnttilde<Gk._size; iqnttilde++){
-        for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
-            lower_level += Gk((ktilde+qtilde-q)._iwn,(ktilde+qtilde-q)._qx)(0,0)*Gk(kbar._iwn-Gk._precomp_qn[iqnttilde],kbar._qx-Gk._kArr_l[qttilde])(1,1);
+    for (int iqnpp=0; iqnpp<Gk._size; iqnpp++){
+        for (size_t qpp=0; qpp<Gk._kArr_l.size(); qpp++){
+            lower_level += Gk(Gk._precomp_qn[iqnpp]+iqnp-wbar,Gk._kArr_l[qpp]+qp-kbar)(0,0)*Gk(Gk._precomp_qn[iqnpp],Gk._kArr_l[qpp])(1,1);
         }
     }
-    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
+    lower_level *= 2.0*Gk._u/(Gk._beta*Gk._Nk); /// No minus sign at ground level. Factor 2 for spin.
     lower_level += 1.0;
-    return Gk._u/lower_level;
+    return Gk._u/lower_level; // Means that we have to multiply the middle level of this component by the two missing Green's functions.
 }
 
-std::complex<double> Susceptibility::gamma_oneD_spsp_full_middle(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D kbar,Hubbard::K_1D q) const{
-    std::complex<double> middle_level=0.0+0.0*im;
-    for (int iqntilde=0; iqntilde<Gk._size; iqntilde++){
-        for (size_t qqtilde=0; qqtilde<Gk._kArr_l.size(); qqtilde++){
-            for (int ikntilde=0; ikntilde<Gk._size; ikntilde++){
-                for (size_t kktilde=0; kktilde<Gk._kArr_l.size(); kktilde++){
-                    Hubbard::K_1D qtilde(Gk._kArr_l[qqtilde],Gk._precomp_qn[iqntilde]);
-                    Hubbard::K_1D ktilde(Gk._kArr_l[kktilde],Gk._precomp_qn[ikntilde]);
-                    middle_level += Gk(ktilde._iwn,ktilde._qx
-                    )(0,0) * gamma_oneD_spsp_full_lower(Gk,ktilde,kbar,qtilde,q
-                    ) * Gk(ktilde._iwn-q._iwn,ktilde._qx-ktilde._qx
-                    )(0,0);
-                }
-            }
+std::tuple< std::complex<double>,std::complex<double> > Susceptibility::gamma_oneD_spsp_full_middle_plotting(Hubbard::FunctorBuildGk& Gk,double kbar,double ktilde,std::complex<double> wbar,std::complex<double> wtilde,Hubbard::K_1D q) const{
+/* Uses gamma_oneD_spsp to compute the infinite-ladder-down part and gamma_oneD_spsp_lower to compute corrections stemming from infinite delta G/delta phi. */    
+    std::complex<double> middle_level=0.0+0.0*im,middle_level_inf=0.0+0.0*im;
+    for (int iqnp=0; iqnp<Gk._size; iqnp++){
+        for (int qp=0; qp<Gk._kArr_l.size(); qp++){
+            middle_level_inf += Gk(Gk._precomp_qn[iqnp],Gk._kArr_l[qp]
+            )(0,0) * gamma_oneD_spsp_full_lower(Gk,Gk._kArr_l[qp],kbar,Gk._precomp_qn[iqnp],wbar
+            ) * Gk(Gk._precomp_qn[iqnp]-q._iwn,Gk._kArr_l[qp]-q._qx
+            )(0,0);
         }
     }
-    middle_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk); /// Removed minus sign
-    middle_level += 1.0;
-    return middle_level;
+    middle_level_inf*=(2.0/(Gk._Nk*Gk._beta)); // Factor 2 for spin.
+    middle_level_inf+=gamma_oneD_spsp(Gk,ktilde,wtilde,kbar,wbar);
+    middle_level-=middle_level_inf;
+    middle_level+=1.0;
+    return std::make_tuple(Gk._u/middle_level,middle_level_inf);
 }
 
-std::complex<double> Susceptibility::chisp_full(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
-    std::complex<double> upper_level=0.0+0.0*im;
-    for (int iknbar=0; iknbar<Gk._size; iknbar++){
-        for (size_t kkbar=0; kkbar<Gk._kArr_l.size(); kkbar++){
-            Hubbard::K_1D kbar(Gk._kArr_l[kkbar],Gk._precomp_wn[iknbar]);
-            upper_level += Gk(kbar._iwn,kbar._qx)(1,1) * gamma_oneD_spsp_full_middle(Gk,kbar,q) * Gk((kbar-q)._iwn,(kbar-q)._qx)(1,1);
-        }
-    }
-    upper_level *= -1.0/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk);
-    return upper_level;
-}
+// std::complex<double> Susceptibility::chisp_full(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
+//     std::complex<double> upper_level=0.0+0.0*im;
+//     for (int iknbar=0; iknbar<Gk._size; iknbar++){
+//         for (size_t kkbar=0; kkbar<Gk._kArr_l.size(); kkbar++){
+//             Hubbard::K_1D kbar(Gk._kArr_l[kkbar],Gk._precomp_wn[iknbar]);
+//             upper_level += Gk(kbar._iwn,kbar._qx)(1,1) * gamma_oneD_spsp_full_middle(Gk,kbar,q) * Gk((kbar-q)._iwn,(kbar-q)._qx)(1,1);
+//         }
+//     }
+//     upper_level *= -1.0/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk);
+//     return upper_level;
+// }
 
 
 /* Leaving the functions entering the full susceptibility. */
@@ -57,7 +54,7 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
             lower_level += Gk((ktilde+q)._iwn-Gk._precomp_qn[wttilde],(ktilde+q)._qx-Gk._kArr_l[qttilde])(0,0)*Gk((kbar+q)._iwn-Gk._precomp_qn[wttilde],(kbar+q)._qx-Gk._kArr_l[qttilde])(1,1);
         }
     }
-    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
+    lower_level *= 1.0*Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
     lower_level += 1.0;
     return Gk._u/lower_level;
 }
@@ -97,16 +94,29 @@ std::complex<double> Susceptibility::chispsp(Hubbard::FunctorBuildGk& Gk,Hubbard
     return upper_level;
 }
 
-std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk,double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar,Hubbard::K_1D q) const{ // q's contain bosonic Matsubara frequencies.
+std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk,double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar) const{ // q's contain bosonic Matsubara frequencies.
     std::complex<double> lower_level=0.0+0.0*im;
     for (int wttilde=0; wttilde<Gk._size; wttilde++){
         for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
-            lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktilde+q._qx-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
+            lower_level += Gk(wtilde-Gk._precomp_qn[wttilde],ktilde-Gk._kArr_l[qttilde])(0,0)*Gk(wbar-Gk._precomp_qn[wttilde],kbar-Gk._kArr_l[qttilde])(1,1);
         }
     }
-    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
-    lower_level += 1.0;
-    return Gk._u/lower_level;
+    lower_level *= -2.0*Gk._u/(Gk._beta*Gk._Nk); // Factor 2 for spin summation.
+    return lower_level;
+}
+
+std::tuple< std::complex<double>,std::complex<double> > Susceptibility::gamma_oneD_spsp_crossed_plotting(Hubbard::FunctorBuildGk& Gk,double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar, Hubbard::K_1D q) const{ // q's contain bosonic Matsubara frequencies.
+    std::complex<double> lower_level=0.0+0.0*im,chi_bubble=0.0+0.0*im;
+    for (int wttilde=0; wttilde<Gk._size; wttilde++){
+        for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
+            lower_level += Gk(wtilde+wbar-Gk._precomp_qn[wttilde]-q._iwn,ktilde+kbar-Gk._kArr_l[qttilde]-q._qx)(0,0)*Gk(Gk._precomp_qn[wttilde],Gk._kArr_l[qttilde])(1,1);
+        }
+    }
+    lower_level *= -2.0*Gk._u/(Gk._beta*Gk._Nk); // Factor 2 for spin summation.
+    chi_bubble=lower_level;
+    lower_level*=-1.0;
+    lower_level+=1.0;
+    return std::make_tuple(Gk._u/lower_level,chi_bubble);
 }
 
 std::complex<double> Susceptibility::gamma_twoD_spsp(Hubbard::FunctorBuildGk& Gk,double ktildex,double ktildey,std::complex<double> wtilde,double kbarx,double kbary,std::complex<double> wbar,Hubbard::K_2D q) const{ // q's contain bosonic Matsubara frequencies.
@@ -127,11 +137,11 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_o
     std::complex<double> lower_level=0.0+0.0*im, chi_bubble=0.0+0.0*im; // chi_bubble represents the lower bubble in the vertex function, not the total vertex function.
     for (int wttilde=0; wttilde<Gk._size; wttilde++){
         for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
-            //lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktilde+q._qx-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
-            lower_level += Gk(-(wtilde+q._iwn-Gk._precomp_qn[wttilde]),-Gk._kArr_l[qttilde])(0,0)*Gk(-(wbar+q._iwn-Gk._precomp_qn[wttilde]),-(Gk._kArr_l[qttilde]+kbar-ktilde))(1,1);
+            lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktilde+q._qx-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
+            //lower_level += Gk(-(wtilde+q._iwn-Gk._precomp_qn[wttilde]),-Gk._kArr_l[qttilde])(0,0)*Gk(-(wbar+q._iwn-Gk._precomp_qn[wttilde]),-(Gk._kArr_l[qttilde]+kbar-ktilde))(1,1);
         }
     }
-    lower_level *= -2.0*Gk._u/(Gk._beta*Gk._Nk); //factor 2 for the spin and minus sign added
+    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk); //factor 2 for the spin and minus sign added
     chi_bubble = lower_level; 
     lower_level *= -1.0;
     lower_level += 1.0;
@@ -147,7 +157,7 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_t
             }
         }
     }
-    lower_level *= -2.0*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); //factor 2 for the spin and minus sign added
+    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); //factor 2 for the spin and minus sign added
     chi_bubble = lower_level; 
     lower_level *= -1.0;
     lower_level += 1.0;
@@ -237,7 +247,7 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
                             Gk._precomp_wn[wtilde],Gk._kArr_l[ktilde]
                             )(0,0)*Gk(
                             Gk._precomp_wn[wtilde]+q._iwn,Gk._kArr_l[ktilde]+q._qx
-                            )(0,0)*gamma_oneD_spsp( Gk, Gk._kArr_l[ktilde], Gk._precomp_wn[wtilde], Gk._kArr_l[kbar], Gk._precomp_wn[wbar], q )*Gk(
+                            )(0,0)*gamma_oneD_spsp( Gk, Gk._kArr_l[ktilde], Gk._precomp_wn[wtilde], Gk._kArr_l[kbar], Gk._precomp_wn[wbar])*Gk( // removed q from Gamma, because the latter is independent.
                             Gk._precomp_wn[wbar]+q._iwn,Gk._kArr_l[kbar]+q._qx
                             )(1,1)*Gk(
                             Gk._precomp_wn[wbar],Gk._kArr_l[kbar]
@@ -347,11 +357,11 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::get_chi
         // }
         /* Saving imaginary part of the susceptibility */
         outputFileChi.open(filename_chi, std::ofstream::out | std::ofstream::app);
-        outputFileChi << Suscep.real() << " ";
+        outputFileChi << Suscep.imag() << " ";
         outputFileChi.close();
         // cout << "susceptibility at k: " << kArr_l[k] << " is " << Suscep << endl;
         outputFileChi0.open(filename_chi0, std::ofstream::out | std::ofstream::app);
-        outputFileChi0 << Suscep0.real() << " ";
+        outputFileChi0 << Suscep0.imag() << " ";
         outputFileChi0.close();
     }
     TVSUSusChi0 *= 0.5;

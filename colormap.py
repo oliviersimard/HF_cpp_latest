@@ -69,6 +69,12 @@ def main():
         opt_val=ImOrRe+r"$\Gamma^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)$"
         beg_sv_figs="Gamma"
 
+    dim_val=""
+    if "_1D_" in filename:
+        dim_val="1D"
+    elif "_2D_" in filename:
+        dim_val="2D"
+
     index_beta = filename.find("beta")
     index_Nk = filename.find("Nk")
     index_Nomega = filename.find("Nomega")
@@ -85,23 +91,41 @@ def main():
     else:
         end_of_file = filename[index_Nomega:].rstrip(".dat")
 
-    fig, ax = plt.subplots(1, 1, figsize=(9, 9))
-    im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('magma'))
-    ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.1f}, $\beta=${1:2.1f}".format(u,beta))
-    ax.set_xlabel(r"$\bar{k}$", fontsize=25, labelpad=10.0)
-    ax.set_ylabel(r"$\tilde{k}$", fontsize=25, labelpad=10.0)
-    ax.set_xticks(np.linspace(0,max_val,10),minor=False)
-    ax.set_yticks(np.linspace(0,max_val,10),minor=False)
-    ax.xaxis.set_tick_params(which='major',direction='inout',length=6)
-    ax.yaxis.set_tick_params(which='major',direction='inout',length=6)
-    ax.xaxis.set_ticklabels([round(x,2) for x in np.linspace(-np.pi,np.pi,10)], color='black', fontsize=10) ## Mapping the data onto Brillouin zone
-    ax.yaxis.set_ticklabels([round(x,2) for x in np.linspace(-np.pi,np.pi,10)], color='black', fontsize=10)
-    ax.set_xlim(left=0,right=max_val)
-    ax.set_ylim(bottom=0,top=max_val)
-    fig.colorbar(im, ax=ax)
+    if "_1D_" in filename:
+        fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+        im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('magma'))
+        ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.1f}, $\beta=${1:2.1f} (1D)".format(u,beta))
+        ax.set_xlabel(r"$\bar{k}$", fontsize=25, labelpad=10.0)
+        ax.set_ylabel(r"$\tilde{k}$", fontsize=25, labelpad=10.0)
+        ax.set_xticks(np.linspace(0,max_val,10),minor=False)
+        ax.set_yticks(np.linspace(0,max_val,10),minor=False)
+        ax.xaxis.set_tick_params(which='major',direction='inout',length=6)
+        ax.yaxis.set_tick_params(which='major',direction='inout',length=6)
+        ax.xaxis.set_ticklabels([round(x,2) for x in np.linspace(-np.pi,np.pi,10)], color='black', fontsize=10) ## Mapping the data onto Brillouin zone
+        ax.yaxis.set_ticklabels([round(x,2) for x in np.linspace(-np.pi,np.pi,10)], color='black', fontsize=10)
+        ax.set_xlim(left=0,right=max_val)
+        ax.set_ylim(bottom=0,top=max_val)
+        fig.colorbar(im, ax=ax)
+    elif "_2D_" in filename:
+        fig, ax = plt.subplots(1, 1, figsize=(9, 9))
+        im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('magma'))
+        ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.1f}, $\beta=${1:2.1f} (2D)".format(u,beta))
+        ax.set_xlabel(r"$\bar{k}_x-\tilde{k}_x$", fontsize=25, labelpad=10.0)
+        ax.set_ylabel(r"$\bar{k}_y-\tilde{k}_y$", fontsize=25, labelpad=10.0)
+        ax.set_xticks(np.linspace(0,max_val,10),minor=False)
+        ax.set_yticks(np.linspace(0,max_val,10),minor=False)
+        ax.xaxis.set_tick_params(which='major',direction='inout',length=6)
+        ax.yaxis.set_tick_params(which='major',direction='inout',length=6)
+        ax.xaxis.set_ticklabels([round(x,2) for x in np.linspace(-np.pi,np.pi,10)], color='black', fontsize=10) ## Mapping the data onto Brillouin zone
+        ax.yaxis.set_ticklabels([round(x,2) for x in np.linspace(-np.pi,np.pi,10)], color='black', fontsize=10)
+        ax.set_xlim(left=0,right=max_val)
+        ax.set_ylim(bottom=0,top=max_val)
+        fig.colorbar(im, ax=ax)
+    else:
+        raise(ValueError("Check the input filename: problem with the dimension...only 1D or 2D possible."))
 
     #plt.gcf().set_size_inches(12,12)
-    plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.2f}_beta_{1:3.2f}_".format(u,beta)+end_of_file+file_ImOrRe+".pdf")
+    plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.2f}_beta_{1:3.2f}_".format(u,beta)+end_of_file+file_ImOrRe+dim_val+".pdf")
     #plt.show()
 
     return None

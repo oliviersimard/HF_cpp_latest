@@ -8,7 +8,7 @@ using namespace std;
 inline bool file_exists(const string&);
 void getWeights(Hubbard::FunctorBuildGk& Gk, Hubbard::K_2D qq, vector<double>& kArr_l,double beta,double Nomega,ofstream& fileObj,string& filename);
 
-// #define ONED
+#define ONED
 
 #ifdef PARALLEL
 /* Remember that armadillo is column-major. Useful for parallel version. */
@@ -34,6 +34,8 @@ class ThreadWrapper{
 
 int main(int argc, char** argv){
 
+    const bool is_full=false; // Implement in json file absolutely!!! <---------------------------------- To do
+
     cout << "Number of threads: " << thread::hardware_concurrency() << '\n';
 
     const string filename("params.json");
@@ -56,7 +58,7 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_serial_first_fermionic_freq_minus_lower_bubble_spin_2_k_change_var"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_serial_first_fermionic_freq_minus_lower_bubble_spin_2_crossed"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd(""); // The folder in data/ containing the data.
 
     #ifdef ONED
@@ -79,9 +81,19 @@ int main(int argc, char** argv){
 
             // Filenames for the file outputs of the susceptibilities chi and chi0.
             #ifdef ONED
-            string fileOutputChispspWeigths("data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
-            string fileOutputChispspGamma("data/"+frontEnd+"ChispspGamma_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
-            string fileOutputChispspGammaBubble("data/"+frontEnd+"ChispspBubble_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+            string fileOutputChispspWeigths;
+            string fileOutputChispspGamma;
+            string fileOutputChispspGammaBubble;
+            if (!is_full){
+                fileOutputChispspWeigths = "data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
+                fileOutputChispspGamma = "data/"+frontEnd+"ChispspGamma_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
+                fileOutputChispspGammaBubble = "data/"+frontEnd+"ChispspBubble_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
+            }
+            else{
+                fileOutputChispspWeigths = "data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
+                fileOutputChispspGamma = "data/"+frontEnd+"ChispspGamma_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
+                fileOutputChispspGammaBubble = "data/"+frontEnd+"ChispspBubble_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
+            }
             #else
             string fileOutputChispspWeigths("data/"+frontEnd+"ChispspWeights_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
             string fileOutputChispspGamma("data/"+frontEnd+"ChispspGamma_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
@@ -181,7 +193,13 @@ int main(int argc, char** argv){
                             tuple< complex<double>, complex<double> > gammaStuff;
                             if ( (wtilde==0) && (wbar==0) ){ // setting some conditions for the Matsubara frequencies (lowest frequencies and weights modified (beta)). same k grid plotted!
                                 // cout << wtilde << " and wbar " << wbar << endl;
-                                gammaStuff=susObj.gamma_oneD_spsp_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
+                                if (!is_full){
+                                    //gammaStuff=susObj.gamma_oneD_spsp_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
+                                    gammaStuff=susObj.gamma_oneD_spsp_crossed_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
+                                }
+                                else{
+                                    gammaStuff=susObj.gamma_oneD_spsp_full_middle_plotting(u_ndo_c,kArr_l[kbar],kArr_l[ktilde],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),qq);
+                                }
                                 tmp_val_kt_kb += get<0>(gammaStuff);
                                 tmp_val_kt_kb_bubble += get<1>(gammaStuff);
                                 tmp_val_weigths += u_ndo_c(
