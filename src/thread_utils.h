@@ -8,9 +8,11 @@
 
 #define NUM_THREADS 2
 
-// #define PARALLEL
+#define PARALLEL
 
 static std::mutex mutx;
+extern arma::Mat< std::complex<double> > matGamma; // Matrices used in case parallel.
+extern arma::Mat< std::complex<double> > matWeigths;
 
 namespace ThreadFunctor{
 
@@ -62,6 +64,23 @@ class ThreadFunctor1D{
         Hubbard::FunctorBuildGk& _Gk;
         Hubbard::K_1D& _q;
         arma::Mat< std::complex<double> >& _ktb;
+};
+
+class ThreadWrapper{
+    public:
+        //ThreadWrapper(Hubbard::FunctorBuildGk& Gk, Hubbard::K_1D& q, arma::cx_dmat::iterator matPtr, arma::cx_dmat::iterator matWPtr);
+        ThreadWrapper(Hubbard::FunctorBuildGk Gk,Hubbard::K_1D& q,double ndo_converged);
+        ~ThreadWrapper(){};
+        void operator()(int ktilde, int kbar, double b);
+        std::complex<double> gamma_oneD_spsp(double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar);
+        std::vector< std::complex<double> > buildGK(std::complex<double> ik, double k);
+        void join_all(std::vector<std::thread>& grp);
+    private:
+        double _ndo_converged;
+        Hubbard::FunctorBuildGk _Gk;
+        Hubbard::K_1D& _q;
+        //arma::cx_dmat::iterator _ktb;
+        //arma::cx_dmat::iterator _ktbW;
 };
 
 } /* ThreadFunctor */

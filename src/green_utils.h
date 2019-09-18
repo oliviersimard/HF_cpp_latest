@@ -7,6 +7,8 @@
 #include<armadillo>
 #include "json_utils.h"
 
+#define SPINDEG 2.0
+
 extern const std::complex<double> im; // Maybe avoid so many const declaration to speed up code.
 extern const arma::Mat< std::complex<double> > II_;
 extern const arma::Mat< std::complex<double> > ZEROS_;
@@ -14,7 +16,7 @@ static arma::Mat< std::complex<double> > statMat(2,2);
 
 class Susceptibility; // class Susceptibility is member of the global scope.
 class FFT; // class FFT is member of the global scope.
-class ThreadWrapper;
+namespace ThreadFunctor { class ThreadWrapper; }
 namespace ThreadFunctor { class ThreadFunctor1D; }
 namespace Hubbard { class FunctorBuildGk; } // Have to forward declare class in namespace to be able to overload operator<<.
 std::ostream& operator<<(std::ostream&, const Hubbard::FunctorBuildGk&);
@@ -28,7 +30,7 @@ class FunctorBuildGk{
     friend class ::Susceptibility;
     friend class ::FFT;
     friend class ::ThreadFunctor::ThreadFunctor1D;
-    friend class ::ThreadWrapper;
+    friend class ::ThreadFunctor::ThreadWrapper;
     public:
         FunctorBuildGk(double,int,double,double,std::vector<double>,std::vector<double>,int,int,std::vector< std::complex<double> >&);
         FunctorBuildGk(::MembCarrier* MemObj,double mu,double ndo,std::vector<double> kArr,std::vector<double> kArr_l,std::vector< std::complex<double> >& Gup_k);

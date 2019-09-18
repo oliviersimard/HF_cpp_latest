@@ -94,7 +94,7 @@ def main():
     if "_1D_" in filename:
         fig, ax = plt.subplots(1, 1, figsize=(9, 9))
         im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('magma'))
-        ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.1f}, $\beta=${1:2.1f} (1D)".format(u,beta))
+        ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.2f}, $\beta=${1:2.1f} (1D)".format(u,beta))
         ax.set_xlabel(r"$\bar{k}$", fontsize=25, labelpad=10.0)
         ax.set_ylabel(r"$\tilde{k}$", fontsize=25, labelpad=10.0)
         ax.set_xticks(np.linspace(0,max_val,10),minor=False)
@@ -109,7 +109,7 @@ def main():
     elif "_2D_" in filename:
         fig, ax = plt.subplots(1, 1, figsize=(9, 9))
         im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('magma'))
-        ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.1f}, $\beta=${1:2.1f} (2D)".format(u,beta))
+        ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.2f}, $\beta=${1:2.1f} (2D)".format(u,beta))
         ax.set_xlabel(r"$\bar{k}_x-\tilde{k}_x$", fontsize=25, labelpad=10.0)
         ax.set_ylabel(r"$\bar{k}_y-\tilde{k}_y$", fontsize=25, labelpad=10.0)
         ax.set_xticks(np.linspace(0,max_val,10),minor=False)

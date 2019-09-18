@@ -9,7 +9,7 @@ std::complex<double> Susceptibility::gamma_oneD_spsp_full_lower(Hubbard::Functor
             lower_level += Gk(Gk._precomp_qn[iqnpp]+iqnp-wbar,Gk._kArr_l[qpp]+qp-kbar)(0,0)*Gk(Gk._precomp_qn[iqnpp],Gk._kArr_l[qpp])(1,1);
         }
     }
-    lower_level *= 2.0*Gk._u/(Gk._beta*Gk._Nk); /// No minus sign at ground level. Factor 2 for spin.
+    lower_level *= SPINDEG*Gk._u/(Gk._beta*Gk._Nk); /// No minus sign at ground level. Factor 2 for spin.
     lower_level += 1.0;
     return Gk._u/lower_level; // Means that we have to multiply the middle level of this component by the two missing Green's functions.
 }
@@ -25,7 +25,7 @@ std::tuple< std::complex<double>,std::complex<double> > Susceptibility::gamma_on
             )(0,0);
         }
     }
-    middle_level_inf*=(2.0/(Gk._Nk*Gk._beta)); // Factor 2 for spin.
+    middle_level_inf*=(SPINDEG/(Gk._Nk*Gk._beta)); // Factor 2 for spin.
     middle_level_inf+=gamma_oneD_spsp(Gk,ktilde,wtilde,kbar,wbar);
     middle_level-=middle_level_inf;
     middle_level+=1.0;
@@ -54,7 +54,7 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
             lower_level += Gk((ktilde+q)._iwn-Gk._precomp_qn[wttilde],(ktilde+q)._qx-Gk._kArr_l[qttilde])(0,0)*Gk((kbar+q)._iwn-Gk._precomp_qn[wttilde],(kbar+q)._qx-Gk._kArr_l[qttilde])(1,1);
         }
     }
-    lower_level *= 1.0*Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
+    lower_level *= SPINDEG*Gk._u/(Gk._beta*Gk._Nk); /// Removed minus sign
     lower_level += 1.0;
     return Gk._u/lower_level;
 }
@@ -90,7 +90,7 @@ std::complex<double> Susceptibility::chispsp(Hubbard::FunctorBuildGk& Gk,Hubbard
         output << "\n";
     }
     output.close();
-    upper_level *= -1.0*(1.0/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk));
+    upper_level *= (SPINDEG/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk));
     return upper_level;
 }
 
@@ -101,7 +101,7 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
             lower_level += Gk(wtilde-Gk._precomp_qn[wttilde],ktilde-Gk._kArr_l[qttilde])(0,0)*Gk(wbar-Gk._precomp_qn[wttilde],kbar-Gk._kArr_l[qttilde])(1,1);
         }
     }
-    lower_level *= -2.0*Gk._u/(Gk._beta*Gk._Nk); // Factor 2 for spin summation.
+    lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk); // Factor 2 for spin summation.
     return lower_level;
 }
 
@@ -112,7 +112,7 @@ std::tuple< std::complex<double>,std::complex<double> > Susceptibility::gamma_on
             lower_level += Gk(wtilde+wbar-Gk._precomp_qn[wttilde]-q._iwn,ktilde+kbar-Gk._kArr_l[qttilde]-q._qx)(0,0)*Gk(Gk._precomp_qn[wttilde],Gk._kArr_l[qttilde])(1,1);
         }
     }
-    lower_level *= -2.0*Gk._u/(Gk._beta*Gk._Nk); // Factor 2 for spin summation.
+    lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk); // Factor 2 for spin summation.
     chi_bubble=lower_level;
     lower_level*=-1.0;
     lower_level+=1.0;
@@ -128,7 +128,7 @@ std::complex<double> Susceptibility::gamma_twoD_spsp(Hubbard::FunctorBuildGk& Gk
             }
         }
     }
-    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign
+    lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign
     lower_level += 1.0;
     return Gk._u/lower_level;
 }
@@ -141,7 +141,7 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_o
             //lower_level += Gk(-(wtilde+q._iwn-Gk._precomp_qn[wttilde]),-Gk._kArr_l[qttilde])(0,0)*Gk(-(wbar+q._iwn-Gk._precomp_qn[wttilde]),-(Gk._kArr_l[qttilde]+kbar-ktilde))(1,1);
         }
     }
-    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk); //factor 2 for the spin and minus sign added
+    lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk); //factor 2 for the spin and minus sign added
     chi_bubble = lower_level; 
     lower_level *= -1.0;
     lower_level += 1.0;
@@ -157,7 +157,7 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_t
             }
         }
     }
-    lower_level *= -1.0*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); //factor 2 for the spin and minus sign added
+    lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); //factor 2 for the spin and minus sign added
     chi_bubble = lower_level; 
     lower_level *= -1.0;
     lower_level += 1.0;
@@ -217,7 +217,7 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
         }
         it+=NUM_THREADS;
     }
-    upper_level *= -1.0*(1.0/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk));
+    upper_level *= -1.0*(1.0/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk));
     output.open(strOutput, std::ofstream::out | std::ofstream::app);
     for (int ktilde=0; ktilde<Gk._kArr_l.size(); ktilde++){ // Printing to file
         for (int kbar=0; kbar<Gk._kArr_l.size(); kbar++){
@@ -247,7 +247,7 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
                             Gk._precomp_wn[wtilde],Gk._kArr_l[ktilde]
                             )(0,0)*Gk(
                             Gk._precomp_wn[wtilde]+q._iwn,Gk._kArr_l[ktilde]+q._qx
-                            )(0,0)*gamma_oneD_spsp( Gk, Gk._kArr_l[ktilde], Gk._precomp_wn[wtilde], Gk._kArr_l[kbar], Gk._precomp_wn[wbar])*Gk( // removed q from Gamma, because the latter is independent.
+                            )(0,0)*(1.0/(1.0+gamma_oneD_spsp( Gk, Gk._kArr_l[ktilde], Gk._precomp_wn[wtilde], Gk._kArr_l[kbar], Gk._precomp_wn[wbar])))*Gk( // removed q from Gamma, because the latter is independent.
                             Gk._precomp_wn[wbar]+q._iwn,Gk._kArr_l[kbar]+q._qx
                             )(1,1)*Gk(
                             Gk._precomp_wn[wbar],Gk._kArr_l[kbar]
@@ -265,7 +265,7 @@ std::complex<double> Susceptibility::chispsp_long_expr(Hubbard::FunctorBuildGk& 
         output << "\n";
         output.close();
     }
-    upper_level *= -1.0*(1.0/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk));
+    upper_level *= (Gk._u/(Gk._beta*Gk._Nk)/(Gk._beta*Gk._Nk));
     output.open(strOutput, std::ofstream::out | std::ofstream::app);
     output << "\n\n";
     output << "Spin susceptibility at "+std::to_string(Gk._u)+" : " << upper_level << "\n\n";
@@ -303,7 +303,7 @@ std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K
             //xi += Gk( Gk._precomp_wn[ikn] + q._iwn, Gk._kArr_l[k] + q._qx )(1,1) * Gk( Gk._precomp_wn[ikn], Gk._kArr_l[k] )(1,1); // Changed (0,0) for (1,1)
         }
     }
-    xi *= -2.0/(Gk._beta*Gk._Nk); /// Included minus sign and factor 2 for the spin
+    xi *= -SPINDEG/(Gk._beta*Gk._Nk); /// Included minus sign and factor 2 for the spin
     return xi;
 }
 
@@ -318,7 +318,7 @@ std::complex<double> Susceptibility::chi0(Hubbard::FunctorBuildGk& Gk,Hubbard::K
             }
         }
     }
-    xi *= -2.0/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign and factor 2 for the spin
+    xi *= -SPINDEG/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign and factor 2 for the spin
     return xi;
 }
 

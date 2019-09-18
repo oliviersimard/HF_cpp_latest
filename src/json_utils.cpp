@@ -1,5 +1,5 @@
 #include "json_utils.h"
-
+//#include <typeinfo> # Useful to evaluate type that is considered
 
 const std::streampos Json_utils::getSize(const std::string& filename){
 
@@ -23,7 +23,7 @@ inline const json_spirit::mValue& Json_utils::get_array_item(const json_spirit::
     return element.get_array().at(index);
 }
 
-MembCarrier::MembCarrier(double* dp, double* dp2, int* ip) : db_ptr(dp), db_ptr2(dp2), int_ptr(ip){
+MembCarrier::MembCarrier(double* dp, double* dp2, int* ip, bool* bp) : db_ptr(dp), db_ptr2(dp2), int_ptr(ip), boo_ptr(bp){
 
 }
 
@@ -55,6 +55,8 @@ MembCarrier Json_utils::JSONLoading(const std::string& filename){
     const auto& N_it_val = get_object_item(value, "N_it");
     const auto& dims_val = get_object_item(value, "dims");
     const auto& gridK_val = get_object_item(value, "gridK");
+    //bool
+    const auto& full_dG_dphi = get_object_item(value, "dGdPhi");
     //array
     const auto& array_val = get_object_item(value, "q_2D");
     double container[2]; // Way to extract array inputs in json file!
@@ -76,6 +78,9 @@ MembCarrier Json_utils::JSONLoading(const std::string& filename){
     int N_it = N_it_val.get_int(); int Nomega = Nomega_val.get_int();
     int dims = dims_val.get_int();
     int gridK = gridK_val.get_int();
+    bool dGdPhi = full_dG_dphi.get_bool();
+
+    //std::cout << dGdPhi << " has type: " << typeid(dGdPhi).name() << std::endl;
 
     //Creating the arrays
     double dub[10] = { Umax, Ustep, Umin, Vmax, Vstep, Vmin, betamax, betastep, betamin, q_1D };
@@ -86,6 +91,7 @@ MembCarrier Json_utils::JSONLoading(const std::string& filename){
     // for (size_t i=0; i<=sizeof(integ)/sizeof(int); i++){
     //     std::cout << integ[i] << std::endl;
     // }
+    bool boo[1] = { dGdPhi };
 
-    return MembCarrier(dub,container,integ);
+    return MembCarrier(dub,container,integ,boo);
 }
