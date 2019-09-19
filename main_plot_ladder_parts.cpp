@@ -10,8 +10,10 @@ void getWeights(Hubbard::FunctorBuildGk& Gk, Hubbard::K_2D qq, vector<double>& k
 
 arma::Mat< complex<double> > matGamma; // Matrices used in case parallel.
 arma::Mat< complex<double> > matWeigths;
+arma::Mat< complex<double> > matTotSus;
 
-#define ONED
+
+//#define ONED
 
 /* Remember that armadillo is column-major. Useful for parallel version. */
 
@@ -42,13 +44,18 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_serial_first_fermionic_freq_minus_lower_bubble_spin_"+to_string(static_cast<int>(SPINDEG))+""); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_parallelized_first_fermionic_freq_minus_lower_bubble_spin_"+to_string(static_cast<int>(SPINDEG))+""); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd(""); // The folder in data/ containing the data.
 
     #ifdef ONED
     string fileOutput("data/"+frontEnd+"TvsU_1D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
     #else
     string fileOutput("data/"+frontEnd+"TvsU_2D_mapping_U_"+to_string(u_init)+"_"+to_string(u_step)+"_"+to_string(u_max)+"_beta_"+to_string(beta_init)+"_"+to_string(beta_step)+"_"+to_string(beta_max)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+    #endif
+    #ifdef PARALLEL
+    matGamma = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
+    matWeigths = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
+    matTotSus = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
     #endif
     // Testing if the files already exist.
     if (file_exists(fileOutput)){
@@ -59,6 +66,7 @@ int main(int argc, char** argv){
     ofstream outputFileChispspWeights;
     ofstream outputFileChispspGamma;
     ofstream outputFileChispspGammaBubble;
+    ofstream outputFileChispspTotSus; // Used mainly for parallelized code.
     for (double beta=beta_init; beta<=beta_max; beta+=beta_step){
         
         for (double u=u_init; u<=u_max; u+=u_step) {
@@ -68,10 +76,12 @@ int main(int argc, char** argv){
             string fileOutputChispspWeigths;
             string fileOutputChispspGamma;
             string fileOutputChispspGammaBubble;
+            string fileOutputChispspTotSus;
             if (!is_full){
                 fileOutputChispspWeigths = "data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
                 fileOutputChispspGamma = "data/"+frontEnd+"ChispspGamma_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
                 fileOutputChispspGammaBubble = "data/"+frontEnd+"ChispspBubble_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
+                fileOutputChispspTotSus = "data/"+frontEnd+"ChispspTotSus_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
             }
             else{
                 fileOutputChispspWeigths = "data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
@@ -82,6 +92,7 @@ int main(int argc, char** argv){
             string fileOutputChispspWeigths("data/"+frontEnd+"ChispspWeights_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
             string fileOutputChispspGamma("data/"+frontEnd+"ChispspGamma_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
             string fileOutputChispspGammaBubble("data/"+frontEnd+"ChispspBubble_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+            string fileOutputChispspTotSus = "data/"+frontEnd+"ChispspTotSus_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
             #endif
 
             mu=u/2.0;
@@ -92,7 +103,9 @@ int main(int argc, char** argv){
             if (VERBOSE > 0) cout << "First 1D: " << u_ndo_c << endl;
             /* Getting the selfconsistency part done. */
             u_ndo_c.get_ndo_1D();
+            #ifdef PARALLEL
             double ndo_converged = u_ndo_c.get_ndo(); // Important for parallelization.
+            #endif
             /* Printing result after selfconsistency. */
             cout << "After 1D: " << u_ndo_c << endl;
             /* Computing ladder susceptibility diagram. */
@@ -102,8 +115,6 @@ int main(int argc, char** argv){
             unsigned int totsize = kArr_l.size()*kArr_l.size(); // Nk+1 * Nk+1
             // arma::cx_dmat::iterator matGammaPtr = matGamma.begin();
             // arma::cx_dmat::iterator matWeigthsPtr = matWeigths.begin();
-            matGamma = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
-            matWeigths = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
             ThreadFunctor::ThreadWrapper threadObj(u_ndo_c,qq,ndo_converged);
             // ThreadWrapper threadObj(u_ndo_c,qq,matGamma,matWeigths);
             while (it<totsize){
@@ -151,18 +162,23 @@ int main(int argc, char** argv){
                 }
                 it+=NUM_THREADS;
             }
+            // Saving to file
             outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
             outputFileChispspWeights.open(fileOutputChispspWeigths, ofstream::out | ofstream::app);
+            outputFileChispspTotSus.open(fileOutputChispspTotSus, ofstream::out | ofstream::app);
             for (int ktilde=0; ktilde<kArr_l.size(); ktilde++){
                 for (int kbar=0; kbar<kArr_l.size(); kbar++){
                     outputFileChispspGamma << matGamma(kbar,ktilde) << " ";
                     outputFileChispspWeights << matWeigths(kbar,ktilde) << " ";
+                    outputFileChispspTotSus << matTotSus(kbar,ktilde) << " ";
                 }
                 outputFileChispspGamma << "\n";
                 outputFileChispspWeights << "\n";
+                outputFileChispspTotSus << "\n";
             }
             outputFileChispspGamma.close();
             outputFileChispspWeights.close();
+            outputFileChispspTotSus.close();
             #else
             Susceptibility susObj;
             for (int ktilde=0; ktilde<kArr_l.size(); ktilde++){
@@ -222,17 +238,75 @@ int main(int argc, char** argv){
 
             }
             
-            #endif
+            #endif /* End of 1D PARALLEL preprocessing */
             
-
-            #else
-            // complex<double> testSup;
+            #else /* If 2D? */
             if (VERBOSE > 0) cout << "First 2D: " << u_ndo_c << endl;
             u_ndo_c.get_ndo_2D();
             cout << "After 2D: " << u_ndo_c << endl;
-
+            #ifdef PARALLEL
+            double ndo_converged = u_ndo_c.get_ndo();  // Important for parallelization.
+            #endif
             Hubbard::K_2D qq(0.0,0.0,0.0+0.0*im); // photon 4-vector
-
+            #ifdef PARALLEL
+            // This section saves only Gamma. Could compute the overall function... <--------------------------- To do.
+            unsigned int it = 0;
+            unsigned int totsize = kArr_l.size()*kArr_l.size(); // Nk+1 * Nk+1
+            ThreadFunctor::ThreadWrapper threadObj(u_ndo_c,qq,ndo_converged);
+            while (it<totsize){
+                if (totsize % NUM_THREADS != 0){
+                    if ( (totsize-it)<NUM_THREADS ){
+                        int newl=totsize-it;
+                        vector<thread> tt(newl);
+                        for (int l=0; l<newl; l++){
+                            int ltot=it+l; // Have to make sure spans over the whole array of k-space.
+                            int lkby_m_kty = static_cast<int>(floor(ltot/kArr_l.size())); // Samples the rows
+                            int lkbx_m_ktx = (ltot % kArr_l.size()); // Samples the columns
+                            cout << "up lkbx_m_ktx: " << lkbx_m_ktx << " up lkby_m_kty: " << lkby_m_kty << "\n";
+                            thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
+                            tt[l]=move(t);
+                            // tt[l]=thread(threadObj,lkt,lkb,beta);
+                        }
+                        threadObj.join_all(tt);
+                    }
+                    else{
+                        vector<thread> tt(NUM_THREADS);
+                        for (int l=0; l<NUM_THREADS; l++){
+                            int ltot=it+l; // Have to make sure spans over the whole array of k-space.
+                            int lkby_m_kty = static_cast<int>(floor(ltot/kArr_l.size()));
+                            int lkbx_m_ktx = (ltot % kArr_l.size());
+                            cout << "up lkbx_m_ktx: " << lkbx_m_ktx << " up lkby_m_kty: " << lkby_m_kty << "\n";
+                            thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
+                            tt[l]=move(t);
+                            //tt.push_back(static_cast<thread&&>(t));
+                        }
+                        threadObj.join_all(tt);
+                    }
+                }
+                else{
+                    vector<thread> tt(NUM_THREADS);
+                    for (int l=0; l<NUM_THREADS; l++){
+                        int ltot=it+l; // Have to make sure spans over the whole array of k-space.
+                        int lkby_m_kty = static_cast<int>(floor(ltot/kArr_l.size()));
+                        int lkbx_m_ktx = (ltot % kArr_l.size());
+                        cout << "down lkbx_m_ktx: " << lkbx_m_ktx << " down lkby_m_kty: " << lkby_m_kty << "\n";
+                        thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
+                        tt[l]=move(t);
+                        // tt[l]=thread(threadObj,lkt,lkb,beta);
+                    }
+                    threadObj.join_all(tt);
+                }
+                it+=NUM_THREADS;
+            }
+            outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
+            for (int kbx_m_ktx=0; kbx_m_ktx<kArr_l.size(); kbx_m_ktx++){
+                for (int kby_m_kty=0; kby_m_kty<kArr_l.size(); kby_m_kty++){
+                    outputFileChispspGamma << matGamma(kby_m_kty,kbx_m_ktx) << " ";
+                }
+                outputFileChispspGamma << "\n";
+            }
+            outputFileChispspGamma.close();
+            #else
             Susceptibility susObj;
             for (int kbary_m_tildey=0; kbary_m_tildey<kArr_l.size(); kbary_m_tildey++){
                 cout << "ktildey_m_bary: " << kbary_m_tildey << "\n";
@@ -267,7 +341,9 @@ int main(int argc, char** argv){
                 outputFileChispspGamma.close();
                 outputFileChispspGammaBubble.close();
             }
-            #endif
+            #endif /* End of 2D PARALLEL preprocessing */
+
+            #endif /* End of dimensionnal preprocessing (ONED) */
             
             outputFile.open(fileOutput, ofstream::out | ofstream::app);
             outputFile << u_ndo_c.get_ndo() << " ";

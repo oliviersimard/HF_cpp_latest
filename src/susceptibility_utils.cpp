@@ -152,7 +152,7 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_t
     std::complex<double> lower_level=0.0+0.0*im, chi_bubble=0.0+0.0*im; // chi_bubble represents the lower bubble in the vertex function, not the total vertex function.
     for (int wttilde=0; wttilde<Gk._size; wttilde++){
         for (size_t qttildey=0; qttildey<Gk._kArr_l.size(); qttildey++){
-            for (size_t qttildex=0; qttildex<Gk._kArr_l.size(); qttildex++){ // the change of variable only applie to k-space, due to periodicity modulo 2pi.
+            for (size_t qttildex=0; qttildex<Gk._kArr_l.size(); qttildex++){ // the change of variable only applies to k-space, due to periodicity modulo 2pi.
                 lower_level += Gk(-(wtilde-Gk._precomp_qn[wttilde]),-Gk._kArr_l[qttildex],-Gk._kArr_l[qttildey])(0,0)*Gk(-(wbar-Gk._precomp_qn[wttilde]),-(Gk._kArr_l[qttildex]+kbarx_m_tildex),-(Gk._kArr_l[qttildey]+kbary_m_tildey))(1,1);
             }
         }
