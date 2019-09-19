@@ -5,8 +5,7 @@
 #include <sstream>
 #include <fstream>
 #include <string>
-// #include <boost/thread.hpp> // Define the Boost headers here, otherwise messes up std::complex<...> and it becomes ugly in vscode.
-// #include <boost/chrono.hpp>
+
 
 #define VERBOSE 0
 
@@ -26,7 +25,8 @@ class Json_utils{
 struct MembCarrier{
     double* db_ptr, *db_ptr2; // db_ptr2 is meant to contain the k-space vector for 2D case!
     int* int_ptr;
-    explicit MembCarrier(double*, double*, int*);
+    bool* boo_ptr;
+    explicit MembCarrier(double*, double*, int*, bool*);
 };
 
 #endif /* json_utils_H_ */

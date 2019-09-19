@@ -3,14 +3,14 @@ cmake_minimum_required(VERSION 3.02 FATAL_ERROR)
 project(HubbardHF)
 
 # important for the use of tuples
-SET(CMAKE_CXX_FLAGS "-std=c++0x")
+SET(CMAKE_CXX_FLAGS "-std=c++14")
 
 set(LIBRARIES_CUSTOM fftw3 armadillo json_spirit)
 
 set(SOURCES_COMMON
         src/fft.cpp src/susceptibility_utils.cpp
         src/green_utils.cpp src/json_utils.cpp
-        src/integral_utils.cpp)
+        src/integral_utils.cpp src/thread_utils.cpp)
 
 #set(SOURCES_HF hartree2DSure.cpp ${SOURCES_COMMON})
 set(SOURCES_MAIN main.cpp ${SOURCES_COMMON})

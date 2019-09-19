@@ -218,7 +218,6 @@ double HubbardExt::get_nAA(){
 }
 
 
-
 double HubbardExt::get_double_occupancy_AA(){
 /* This function computes U<n_{up}n_{down}> = 1/(\beta*V)*\sum_{k,ikn} \Sigma(k,ikn)G(k,ikn)e^{-ikn0^-} */
     double d=0.0;
@@ -228,10 +227,10 @@ double HubbardExt::get_double_occupancy_AA(){
         for (int k=0; k<_kArr.size(); k++){ // Summing over G(k)
             double epsk = -2.0*cos(_kArr[k]);
             if ( (k==0) || (k==_Nk) ){
-                d_k += *(_S_vec_ptr[0] + j*_Nk + k)*0.5/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+                d_k += *(_S_vec_ptr[0] + j*_Nk + k)*0.5/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk)//*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
             }
             else{
-                d_k += *(_S_vec_ptr[0] + j*_Nk + k)*1.0/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+                d_k += *(_S_vec_ptr[0] + j*_Nk + k)*1.0/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk)//*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
             }
         }
         d_k /= (_Nk);

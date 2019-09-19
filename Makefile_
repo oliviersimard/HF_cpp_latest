@@ -10,11 +10,11 @@ PROG=PiTon
 
 all: $(PROG)
 
-$(PROG): $(OBJ)/main_plot_ladder_parts.o $(OBJ)/green_utils.o $(OBJ)/susceptibility_utils.o $(OBJ)/fft.o $(OBJ)/json_utils.o $(OBJ)/integral_utils.o $(OBJ)/thread_utils.o
-	$(CXX) $(OBJ)/main_plot_ladder_parts.o $(OBJ)/green_utils.o $(OBJ)/susceptibility_utils.o $(OBJ)/fft.o $(OBJ)/json_utils.o $(OBJ)/integral_utils.o $(OBJ)/thread_utils.o $(CXXFLAGS) -o main_plot_ladder_parts.out
+$(PROG): $(OBJ)/main.o $(OBJ)/green_utils.o $(OBJ)/susceptibility_utils.o $(OBJ)/fft.o $(OBJ)/json_utils.o $(OBJ)/integral_utils.o $(OBJ)/thread_utils.o
+	$(CXX) $(OBJ)/main.o $(OBJ)/green_utils.o $(OBJ)/susceptibility_utils.o $(OBJ)/fft.o $(OBJ)/json_utils.o $(OBJ)/integral_utils.o $(OBJ)/thread_utils.o $(CXXFLAGS) -o main.out
 
-$(OBJ)/main_plot_ladder_parts.o: $(PWD)/main_plot_ladder_parts.cpp
-	$(CXX) -c -I$(INC) $(PWD)/main_plot_ladder_parts.cpp -o $(OBJ)/main_plot_ladder_parts.o
+$(OBJ)/main.o: $(PWD)/main.cpp
+	$(CXX) -c -I$(INC) $(PWD)/main.cpp -o $(OBJ)/main.o
 
 $(OBJ)/green_utils.o: $(SRC)/green_utils.cpp
 	$(CXX) -c -I$(INC) $(SRC)/green_utils.cpp -o $(OBJ)/green_utils.o
@@ -35,4 +35,4 @@ $(OBJ)/thread_utils.o: $(SRC)/thread_utils.cpp
 	$(CXX) -c -I$(INC) $(SRC)/thread_utils.cpp -o $(OBJ)/thread_utils.o
 
 clean:
-	rm $(OBJ)/* $(PWD)/main_plot_ladder_parts.out
+	rm $(OBJ)/* $(PWD)/main.out
