@@ -11,7 +11,7 @@
     "Nomega": 100, 
     "N_it": 100,
     "dims": 1,
-    "gridK": 50,
+    "gridK": 10,
     "q_1D": 0.0,
     "q_2D": [0.0,0.0],
     "dGdPhi": false

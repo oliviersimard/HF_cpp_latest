@@ -7,10 +7,9 @@ using namespace std;
 
 inline bool file_exists(const string&);
 void getWeights(Hubbard::FunctorBuildGk& Gk, Hubbard::K_2D qq, vector<double>& kArr_l,double beta,double Nomega,ofstream& fileObj,string& filename);
-void join_all(vector<thread>&);
-arma::Mat< std::complex<double> > matGamma; // Matrices used in case parallel.
-arma::Mat< std::complex<double> > matWeigths;
 
+arma::Mat< complex<double> > matGamma; // Matrices used in case parallel.
+arma::Mat< complex<double> > matWeigths;
 
 #define ONED
 
@@ -43,7 +42,7 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_parallelized_first_fermionic_freq_minus_lower_bubble_spin_"+to_string(static_cast<int>(SPINDEG))+""); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_serial_first_fermionic_freq_minus_lower_bubble_spin_"+to_string(static_cast<int>(SPINDEG))+""); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd(""); // The folder in data/ containing the data.
 
     #ifdef ONED
@@ -103,8 +102,8 @@ int main(int argc, char** argv){
             unsigned int totsize = kArr_l.size()*kArr_l.size(); // Nk+1 * Nk+1
             // arma::cx_dmat::iterator matGammaPtr = matGamma.begin();
             // arma::cx_dmat::iterator matWeigthsPtr = matWeigths.begin();
-            matGamma = arma::cx_dmat(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
-            matWeigths = arma::cx_dmat(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
+            matGamma = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
+            matWeigths = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
             ThreadFunctor::ThreadWrapper threadObj(u_ndo_c,qq,ndo_converged);
             // ThreadWrapper threadObj(u_ndo_c,qq,matGamma,matWeigths);
             while (it<totsize){
@@ -115,11 +114,10 @@ int main(int argc, char** argv){
                         for (int l=0; l<newl; l++){
                             int ltot=it+l; // Have to make sure spans over the whole array of k-space.
                             int lkt = static_cast<int>(floor(ltot/kArr_l.size())); // Samples the rows
-                            int lkb = (totsize % kArr_l.size()); // Samples the columns
+                            int lkb = (ltot % kArr_l.size()); // Samples the columns
                             thread t(ref(threadObj),lkt,lkb,beta);
                             tt[l]=move(t);
                             // tt[l]=thread(threadObj,lkt,lkb,beta);
-                            cout << "ho" << ltot << "\n";
                         }
                         threadObj.join_all(tt);
                     }
@@ -134,7 +132,6 @@ int main(int argc, char** argv){
                             tt[l]=move(t);
                             //tt.push_back(static_cast<thread&&>(t));
                             // tt[l]=thread(threadObj,lkt,lkb,beta);
-                            cout << "hola" << ltot << "\n";
                         }
                         threadObj.join_all(tt);
                     }
@@ -153,9 +150,6 @@ int main(int argc, char** argv){
                     threadObj.join_all(tt);
                 }
                 it+=NUM_THREADS;
-                if (it > 6){ // To test speeds of different configurations...
-                    exit(0);
-                }
             }
             outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
             outputFileChispspWeights.open(fileOutputChispspWeigths, ofstream::out | ofstream::app);
@@ -325,15 +319,3 @@ void getWeights(Hubbard::FunctorBuildGk& Gk, Hubbard::K_2D qq, vector<double>& k
     outputFileChispspWeights << "\n";
     outputFileChispspWeights.close();
 }
-
-#ifdef PARALLEL
-
-void join_all(vector<thread>& grp){
-    for (auto& thread : grp){
-        if (thread.joinable()){
-            thread.join();
-        }
-    }
-}
-
-#endif

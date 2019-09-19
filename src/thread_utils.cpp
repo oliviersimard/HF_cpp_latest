@@ -42,7 +42,7 @@ std::complex<double> ThreadFunctor1D::gamma_oneD_spsp(double ktilde,std::complex
             lower_level += _Gk(wtilde-_Gk._precomp_qn[wttilde],ktilde-_Gk._kArr_l[qttilde])(0,0)*_Gk(wbar+_q._iwn-_Gk._precomp_qn[wttilde],kbar+_q._qx-_Gk._kArr_l[qttilde])(1,1);
         }
     }
-    lower_level *= -1.0*_Gk._u/(_Gk._beta*_Gk._Nk); /// Removed minus sign
+    lower_level *= 1.0*_Gk._u/(_Gk._beta*_Gk._Nk); /// Removed minus sign
     lower_level += 1.0;
     return _Gk._u/lower_level;
 }
