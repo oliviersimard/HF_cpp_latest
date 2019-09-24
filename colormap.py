@@ -59,15 +59,26 @@ def main():
 
     opt_val=""
     beg_sv_figs=""
-    if "Weights" in filename:
-        opt_val=ImOrRe+r"$\mathcal{G}^{\sigma}(\tilde{k})\mathcal{G}^{\sigma}(\tilde{k}-q)\mathcal{G}^{\bar{\sigma}}(\bar{k}+q)\mathcal{G}^{\bar{\sigma}}(\bar{k})$"
-        beg_sv_figs="Weights"
-    elif "Bubble" in filename:
-        opt_val=ImOrRe+r"$U\mathcal{G}^{\sigma}(\tilde{k}+q)\mathcal{G}^{\sigma}(\bar{k}+q)$"
-        beg_sv_figs="Bubble"
+    if "full" not in filename:
+        if "Weights" in filename:
+            opt_val=ImOrRe+r"$\mathcal{G}^{\sigma}(\tilde{k})\mathcal{G}^{\sigma}(\tilde{k}-q)\mathcal{G}^{\bar{\sigma}}(\bar{k}+q)\mathcal{G}^{\bar{\sigma}}(\bar{k})$"
+            beg_sv_figs="Weights"
+        elif "Bubble" in filename:
+            opt_val=ImOrRe+r"$U\mathcal{G}^{\sigma}(\tilde{k}+q)\mathcal{G}^{\sigma}(\bar{k}+q)$"
+            beg_sv_figs="Bubble"
+        else:
+            opt_val=ImOrRe+r"$\Gamma^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)$"
+            beg_sv_figs="Gamma"
     else:
-        opt_val=ImOrRe+r"$\Gamma^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)$"
-        beg_sv_figs="Gamma"
+        if "Weights" in filename:
+            opt_val=ImOrRe+r"$\mathcal{G}^{\sigma}(\tilde{k})\mathcal{G}^{\sigma}(\tilde{k}-q)\mathcal{G}^{\bar{\sigma}}(\bar{k}+q)\mathcal{G}^{\bar{\sigma}}(\bar{k})$"
+            beg_sv_figs="Weights"
+        elif "Bubble" in filename:
+            opt_val=ImOrRe+r"$U\chi_f^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)$"
+            beg_sv_figs="Bubble"
+        else:
+            opt_val=ImOrRe+r"$\frac{U}{1-U\chi_f^{\sigma\bar{\sigma}}(\tilde{k},\bar{k},q)}$"
+            beg_sv_figs="Gamma"
 
     dim_val=""
     if "_1D_" in filename:
@@ -94,7 +105,10 @@ def main():
     if "_1D_" in filename:
         fig, ax = plt.subplots(1, 1, figsize=(9, 9))
         im = ax.imshow(mesh, aspect="auto", origin='lower', cmap=plt.get_cmap('magma'))
-        ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.2f}, $\beta=${1:2.1f} (1D)".format(u,beta))
+        if "full" in filename:
+            ax.set_title(opt_val+r" (full ladder diagrams) for $U$={0:2.2f}, $\beta=${1:2.1f} (1D)".format(u,beta))
+        else:
+            ax.set_title(opt_val+r" (ladder diagrams) for $U$={0:2.2f}, $\beta=${1:2.1f} (1D)".format(u,beta))
         ax.set_xlabel(r"$\bar{k}$", fontsize=25, labelpad=10.0)
         ax.set_ylabel(r"$\tilde{k}$", fontsize=25, labelpad=10.0)
         ax.set_xticks(np.linspace(0,max_val,10),minor=False)

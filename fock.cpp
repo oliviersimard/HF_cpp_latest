@@ -63,13 +63,13 @@ int main(int argc, char ** argv){
                 
                 for (int kn=0; kn<_Nomega; kn++){
                     
-                    for (int k=0; k<_Nk; k++){
+                    for (int k=0; k<=_Nk; k++){
                         // First updating the AA self-energies
                         hubbardExtObj.Sup_kAA(k,kn);
                         hubbardExtObj.Sdo_kAA(k,kn);
                     }
                 }
-                for (int kn=0; kn<_Nomega; kn++){
+                for (int kn=0; kn<=_Nomega; kn++){
                     
                     for (int k=0; k<_Nk; k++){
                         // Then updating the BB self-energies
@@ -79,25 +79,25 @@ int main(int argc, char ** argv){
                 }
                 std::cout << "it: " << i << std::endl;
                 n = hubbardExtObj.get_nAA();
-                d = hubbardExtObj.get_double_occupancy_AA();
-                std::cout << "d: " << d << std::endl;
+                // d = hubbardExtObj.get_double_occupancy_AA();
+                // std::cout << "d: " << d << std::endl;
             }
             output.open(strOutput, std::ofstream::out | std::ofstream::app);
             output << n << " ";
             output.close();
 
-            outputDO.open(strOutputDO, std::ofstream::out | std::ofstream::app);
-            outputDO << d << " ";
-            outputDO.close();
+            // outputDO.open(strOutputDO, std::ofstream::out | std::ofstream::app);
+            // outputDO << d << " ";
+            // outputDO.close();
         }
         std::cout << "\n";
         output.open(strOutput, std::ofstream::out | std::ofstream::app);
         output << "\n";
         output.close();
 
-        outputDO.open(strOutputDO, std::ofstream::out | std::ofstream::app);
-        outputDO << " ";
-        outputDO.close();
+        // outputDO.open(strOutputDO, std::ofstream::out | std::ofstream::app);
+        // outputDO << " ";
+        // outputDO.close();
     }
   return 0;
 }
@@ -218,28 +218,28 @@ double HubbardExt::get_nAA(){
 }
 
 
-double HubbardExt::get_double_occupancy_AA(){
-/* This function computes U<n_{up}n_{down}> = 1/(\beta*V)*\sum_{k,ikn} \Sigma(k,ikn)G(k,ikn)e^{-ikn0^-} */
-    double d=0.0;
-    for (int j=0; j<_Nomega; j++){
-        std::complex<double> d_k(0.0,0.0);
-        std::complex<double> wj = w(j);
-        for (int k=0; k<_kArr.size(); k++){ // Summing over G(k)
-            double epsk = -2.0*cos(_kArr[k]);
-            if ( (k==0) || (k==_Nk) ){
-                d_k += *(_S_vec_ptr[0] + j*_Nk + k)*0.5/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk)//*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
-            }
-            else{
-                d_k += *(_S_vec_ptr[0] + j*_Nk + k)*1.0/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk)//*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
-            }
-        }
-        d_k /= (_Nk);
-        d += (2.0/_beta)*( d_k ).real();
-    }
-    d *= -1.0;
+// double HubbardExt::get_double_occupancy_AA(){
+// /* This function computes U<n_{up}n_{down}> = 1/(\beta*V)*\sum_{k,ikn} \Sigma(k,ikn)G(k,ikn)e^{-ikn0^-} */
+//     double d=0.0;
+//     for (int j=0; j<_Nomega; j++){
+//         std::complex<double> d_k(0.0,0.0);
+//         std::complex<double> wj = w(j);
+//         for (int k=0; k<_kArr.size(); k++){ // Summing over G(k)
+//             double epsk = -2.0*cos(_kArr[k]);
+//             if ( (k==0) || (k==_Nk) ){
+//                 d_k += *(_S_vec_ptr[0] + j*_Nk + k)*0.5/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk)//*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+//             }
+//             else{
+//                 d_k += *(_S_vec_ptr[0] + j*_Nk + k)*1.0/( wj + _mu - *(_S_vec_ptr[0] + j*_Nk + k) - epsk)//*epsk/( wj + _mu - *(_S_vec_ptr[2] + j*_Nk + k) ) );
+//             }
+//         }
+//         d_k /= (_Nk);
+//         d += (2.0/_beta)*( d_k ).real();
+//     }
+//     d *= -1.0;
 
-    return d;
-}
+//     return d;
+// }
 
 std::complex<double> HubbardExt::w(int j){
     return std::complex<double>(0.0,(2.0*(double)j+1.0)*M_PI/_beta);

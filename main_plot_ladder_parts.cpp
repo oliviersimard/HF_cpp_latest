@@ -13,7 +13,7 @@ arma::Mat< complex<double> > matWeigths;
 arma::Mat< complex<double> > matTotSus;
 
 
-//#define ONED
+#define ONED
 
 /* Remember that armadillo is column-major. Useful for parallel version. */
 
@@ -44,7 +44,7 @@ int main(int argc, char** argv){
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_parallelized_first_fermionic_freq_minus_lower_bubble_spin_"+to_string(static_cast<int>(SPINDEG))+""); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_serial_first_fermionic_freq_minus_lower_bubble_spin_"+to_string(static_cast<int>(SPINDEG))+""); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd(""); // The folder in data/ containing the data.
 
     #ifdef ONED
@@ -66,7 +66,8 @@ int main(int argc, char** argv){
     ofstream outputFileChispspWeights;
     ofstream outputFileChispspGamma;
     ofstream outputFileChispspGammaBubble;
-    ofstream outputFileChispspTotSus; // Used mainly for parallelized code.
+    ofstream outputFileChispspGammaBubbleCorr;
+    ofstream outputFileChispspTotSus; // Used mainly for parallelized code (1D).
     for (double beta=beta_init; beta<=beta_max; beta+=beta_step){
         
         for (double u=u_init; u<=u_max; u+=u_step) {
@@ -76,6 +77,7 @@ int main(int argc, char** argv){
             string fileOutputChispspWeigths;
             string fileOutputChispspGamma;
             string fileOutputChispspGammaBubble;
+            string fileOutputChispspGammaBubbleCorr;
             string fileOutputChispspTotSus;
             if (!is_full){
                 fileOutputChispspWeigths = "data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
@@ -87,6 +89,7 @@ int main(int argc, char** argv){
                 fileOutputChispspWeigths = "data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
                 fileOutputChispspGamma = "data/"+frontEnd+"ChispspGamma_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
                 fileOutputChispspGammaBubble = "data/"+frontEnd+"ChispspBubble_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
+                fileOutputChispspGammaBubbleCorr = "data/"+frontEnd+"ChispspBubbleCorr_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
             }
             #else
             string fileOutputChispspWeigths("data/"+frontEnd+"ChispspWeights_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
@@ -186,21 +189,25 @@ int main(int argc, char** argv){
                 for (int kbar=0; kbar<kArr_l.size(); kbar++){
                     cout << "kbar: " << kbar << endl;
                     complex<double> tmp_val_kt_kb(0.0,0.0), tmp_val_kt_kb_bubble(0.0,0.0);
-                    complex<double> tmp_val_weigths(0.0,0.0);
+                    complex<double> tmp_val_weigths(0.0,0.0), tmp_val_bubble_corr(0.0,0.0);
                     for (int wtilde=0; wtilde<Gup_k.size(); wtilde++){
                         for (int wbar=0; wbar<Gup_k.size(); wbar++){
+                            tuple< complex<double>, complex<double>, complex<double> > gammaStuffFull;
                             tuple< complex<double>, complex<double> > gammaStuff;
                             if ( (wtilde==0) && (wbar==0) ){ // setting some conditions for the Matsubara frequencies (lowest frequencies and weights modified (beta)). same k grid plotted!
                                 // cout << wtilde << " and wbar " << wbar << endl;
                                 if (!is_full){
                                     gammaStuff=susObj.gamma_oneD_spsp_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
                                     //gammaStuff=susObj.gamma_oneD_spsp_crossed_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
+                                    tmp_val_kt_kb += get<0>(gammaStuff);
+                                    tmp_val_kt_kb_bubble += get<1>(gammaStuff);
                                 }
                                 else{
-                                    gammaStuff=susObj.gamma_oneD_spsp_full_middle_plotting(u_ndo_c,kArr_l[kbar],kArr_l[ktilde],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),qq);
+                                    gammaStuffFull=susObj.gamma_oneD_spsp_full_middle_plotting(u_ndo_c,kArr_l[kbar],kArr_l[ktilde],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),qq);
+                                    tmp_val_kt_kb += get<0>(gammaStuffFull);
+                                    tmp_val_kt_kb_bubble += get<1>(gammaStuffFull);
+                                    tmp_val_bubble_corr += get<2>(gammaStuffFull);
                                 }
-                                tmp_val_kt_kb += get<0>(gammaStuff);
-                                tmp_val_kt_kb_bubble += get<1>(gammaStuff);
                                 tmp_val_weigths += u_ndo_c(
                                     complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[ktilde]
                                     )(0,0)*u_ndo_c(
@@ -225,6 +232,11 @@ int main(int argc, char** argv){
                     outputFileChispspGamma.close();
                     outputFileChispspGammaBubble.close();
                     outputFileChispspWeights.close();
+                    if (is_full){
+                        outputFileChispspGammaBubbleCorr.open(fileOutputChispspGammaBubbleCorr, ofstream::out | ofstream::app);
+                        outputFileChispspGammaBubbleCorr << tmp_val_bubble_corr << " ";
+                        outputFileChispspGammaBubbleCorr.close();
+                    }
                 }
                 outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
                 outputFileChispspGammaBubble.open(fileOutputChispspGammaBubble, ofstream::out | ofstream::app);
@@ -235,6 +247,11 @@ int main(int argc, char** argv){
                 outputFileChispspGamma.close();
                 outputFileChispspGammaBubble.close();
                 outputFileChispspWeights.close();
+                if (is_full){
+                    outputFileChispspGammaBubbleCorr.open(fileOutputChispspGammaBubbleCorr, ofstream::out | ofstream::app);
+                    outputFileChispspGammaBubbleCorr << "\n";
+                    outputFileChispspGammaBubbleCorr.close();
+                }
 
             }
             

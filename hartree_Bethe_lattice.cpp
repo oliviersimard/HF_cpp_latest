@@ -23,10 +23,10 @@ int main(int argc, char ** argv){
     std::vector<std::complex<double> > Gup_k_weiss(Nomega), Gdo_k_weiss(Nomega);
   
     std::ofstream output;
-    std::string strOutput("beta_5.0_200.0_1.0_vs_u_0.0_3.0_0.01_Bethe_lattice.dat");
-    for (beta=5.0; beta<=200.0; beta+=1.0){
+    std::string strOutput("beta_5.0_200.0_0.1_vs_u_0.0_3.0_0.01_Bethe_lattice.dat");
+    for (beta=5.0; beta<=200.0; beta+=0.1){
         
-        for (u=0.0; u<=3.0; u+=0.01) {
+        for (u=0.0; u<=3.5; u+=0.05) {
             mu=u/2.;
             ndo=ndo_initial;
             // Initialize the weiss Green's function with semicircular DOS. (Bethe lattice)

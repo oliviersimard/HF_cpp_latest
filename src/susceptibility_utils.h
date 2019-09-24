@@ -19,8 +19,8 @@ class Susceptibility{ // The current-current susceptibility uses the +U in gamma
         std::complex<double> chisp(Hubbard::FunctorBuildGk&,Hubbard::K_2D) const;
         std::complex<double> chi0(Hubbard::FunctorBuildGk&,Hubbard::K_1D) const;
         std::complex<double> chi0(Hubbard::FunctorBuildGk&,Hubbard::K_2D) const;
-        std::complex<double> gamma_oneD_spsp_full_lower(Hubbard::FunctorBuildGk& Gk,double qp,double kbar,std::complex<double> iqnp,std::complex<double> wbar) const;
-        std::tuple< std::complex<double>, std::complex<double> > gamma_oneD_spsp_full_middle_plotting(Hubbard::FunctorBuildGk& Gk,double kbar,double ktilde,std::complex<double> wbar,std::complex<double> wtilde,Hubbard::K_1D q) const;
+        std::complex<double> gamma_oneD_spsp_full_lower(Hubbard::FunctorBuildGk& Gk,double kp,double kbar,std::complex<double> iknp,std::complex<double> wbar) const;
+        std::tuple< std::complex<double>, std::complex<double>, std::complex<double> > gamma_oneD_spsp_full_middle_plotting(Hubbard::FunctorBuildGk& Gk,double kbar,double ktilde,std::complex<double> wbar,std::complex<double> wtilde,Hubbard::K_1D q) const;
         std::complex<double> chisp_full(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const;
         std::tuple< std::complex<double>, std::complex<double> > get_chi_1D(Hubbard::FunctorBuildGk& Gk, std::string filename_chi, std::string filename_chi0);
         std::tuple< std::complex<double>, std::complex<double> > get_chi_2D(Hubbard::FunctorBuildGk& Gk, std::string filename_chi, std::string filename_chi0);

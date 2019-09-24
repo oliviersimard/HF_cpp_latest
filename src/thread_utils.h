@@ -6,9 +6,9 @@
 #include <chrono>
 #include "green_utils.h"
 
-#define NUM_THREADS 2
+#define NUM_THREADS 4
 
-#define PARALLEL
+//#define PARALLEL
 
 static std::mutex mutx;
 extern arma::Mat< std::complex<double> > matGamma; // Matrices used in case parallel.

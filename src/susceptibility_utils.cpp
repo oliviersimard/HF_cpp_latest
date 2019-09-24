@@ -2,34 +2,42 @@
 
 /* Functions entering the full spin susceptibility. */
 
-std::complex<double> Susceptibility::gamma_oneD_spsp_full_lower(Hubbard::FunctorBuildGk& Gk,double qp,double kbar,std::complex<double> iqnp,std::complex<double> wbar) const{
+std::complex<double> Susceptibility::gamma_oneD_spsp_full_lower(Hubbard::FunctorBuildGk& Gk,double kp,double kbar,std::complex<double> iknp,std::complex<double> wbar) const{
     std::complex<double> lower_level=0.0+0.0*im;
-    for (int iqnpp=0; iqnpp<Gk._size; iqnpp++){
-        for (size_t qpp=0; qpp<Gk._kArr_l.size(); qpp++){
-            lower_level += Gk(Gk._precomp_qn[iqnpp]+iqnp-wbar,Gk._kArr_l[qpp]+qp-kbar)(0,0)*Gk(Gk._precomp_qn[iqnpp],Gk._kArr_l[qpp])(1,1);
+    for (size_t iknpp=0; iknpp<Gk._size; iknpp++){
+        for (size_t kpp=0; kpp<Gk._kArr_l.size(); kpp++){
+            lower_level += Gk(Gk._precomp_wn[iknpp]+iknp-wbar,Gk._kArr_l[kpp]+kp-kbar)(0,0)*Gk(Gk._precomp_wn[iknpp],Gk._kArr_l[kpp])(1,1);
         }
     }
-    lower_level *= SPINDEG*Gk._u/(Gk._beta*Gk._Nk); /// No minus sign at ground level. Factor 2 for spin.
+    lower_level *= SPINDEG*Gk._u/(Gk._beta*(Gk._Nk)); /// No minus sign at ground level. Factor 2 for spin.
+    //std::cout << "Lowest level (kbar): " << Gk._u/(1.0+lower_level) << "\n";
+    //std::cout << "Nk: " << Gk._Nk << " " << Gk._beta << " " << Gk._u << "\n";
     lower_level += 1.0;
     return Gk._u/lower_level; // Means that we have to multiply the middle level of this component by the two missing Green's functions.
 }
 
-std::tuple< std::complex<double>,std::complex<double> > Susceptibility::gamma_oneD_spsp_full_middle_plotting(Hubbard::FunctorBuildGk& Gk,double kbar,double ktilde,std::complex<double> wbar,std::complex<double> wtilde,Hubbard::K_1D q) const{
+std::tuple< std::complex<double>,std::complex<double>,std::complex<double> > Susceptibility::gamma_oneD_spsp_full_middle_plotting(Hubbard::FunctorBuildGk& Gk,double kbar,double ktilde,std::complex<double> wbar,std::complex<double> wtilde,Hubbard::K_1D q) const{
 /* Uses gamma_oneD_spsp to compute the infinite-ladder-down part and gamma_oneD_spsp_lower to compute corrections stemming from infinite delta G/delta phi. */    
-    std::complex<double> middle_level=0.0+0.0*im,middle_level_inf=0.0+0.0*im;
-    for (int iqnp=0; iqnp<Gk._size; iqnp++){
-        for (int qp=0; qp<Gk._kArr_l.size(); qp++){
-            middle_level_inf += Gk(Gk._precomp_qn[iqnp],Gk._kArr_l[qp]
-            )(0,0) * gamma_oneD_spsp_full_lower(Gk,Gk._kArr_l[qp],kbar,Gk._precomp_qn[iqnp],wbar
-            ) * Gk(Gk._precomp_qn[iqnp]-q._iwn,Gk._kArr_l[qp]-q._qx
+    std::complex<double> middle_level=0.0+0.0*im,middle_level_inf=0.0+0.0*im,middle_level_corr=0.0+0.0*im;
+    for (size_t kp=0; kp<Gk._kArr_l.size(); kp++){
+        for (size_t iknp=0; iknp<Gk._size; iknp++){
+            middle_level_inf += Gk(Gk._precomp_wn[iknp],Gk._kArr_l[kp]
+            )(0,0) * gamma_oneD_spsp_full_lower(Gk,Gk._kArr_l[kp],kbar,Gk._precomp_wn[iknp],wbar
+            ) * Gk(Gk._precomp_wn[iknp]-q._iwn,Gk._kArr_l[kp]-q._qx
             )(0,0);
+
         }
+        // std::cout << "qp: " << kp << " middle_level_inf: " << (1.0/Gk._beta)*middle_level_inf << "\n";
+        // if (kp>=static_cast<int>(ceil(Gk._kArr_l.size()/2.0))){
+        //     exit(0);    
+        // }
     }
-    middle_level_inf*=(SPINDEG/(Gk._Nk*Gk._beta)); // Factor 2 for spin.
+    middle_level_inf*=(SPINDEG/((Gk._Nk)*Gk._beta)); // Factor 2 for spin.
+    middle_level_corr+=middle_level_inf;
     middle_level_inf+=gamma_oneD_spsp(Gk,ktilde,wtilde,kbar,wbar);
     middle_level-=middle_level_inf;
     middle_level+=1.0;
-    return std::make_tuple(Gk._u/middle_level,middle_level_inf);
+    return std::make_tuple(Gk._u/middle_level,middle_level_inf,middle_level_corr);
 }
 
 // std::complex<double> Susceptibility::chisp_full(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
@@ -101,7 +109,7 @@ std::complex<double> Susceptibility::gamma_oneD_spsp(Hubbard::FunctorBuildGk& Gk
             lower_level += Gk(wtilde-Gk._precomp_qn[wttilde],ktilde-Gk._kArr_l[qttilde])(0,0)*Gk(wbar-Gk._precomp_qn[wttilde],kbar-Gk._kArr_l[qttilde])(1,1);
         }
     }
-    lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk); // Factor 2 for spin summation.
+    lower_level *= -SPINDEG*Gk._u/(Gk._beta*(Gk._Nk)); // Factor 2 for spin summation.
     return lower_level;
 }
 
