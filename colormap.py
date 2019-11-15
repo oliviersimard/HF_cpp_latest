@@ -139,8 +139,8 @@ def main():
         raise(ValueError("Check the input filename: problem with the dimension...only 1D or 2D possible."))
 
     #plt.gcf().set_size_inches(12,12)
-    plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.2f}_beta_{1:3.2f}_".format(u,beta)+end_of_file+file_ImOrRe+dim_val+".pdf")
-    #plt.show()
+    #plt.savefig(imageDir+beg_sv_figs+"_U_{0:3.2f}_beta_{1:3.2f}_".format(u,beta)+end_of_file+file_ImOrRe+dim_val+".pdf")
+    plt.show()
 
     return None
 

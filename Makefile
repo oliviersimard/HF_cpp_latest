@@ -4,7 +4,7 @@ OBJ=$(PWD)/obj
 CXX=g++ -std=c++14 -g -O0 -Wall #-Xpreprocessor -fopenmp #-DONED
 INC=${HOME}/include
 LIB=${HOME}/lib
-CXXFLAGS= -L$(LIB) -larmadillo -lfftw3 -ljson_spirit #-lboost_system -lboost_thread#-lomp
+CXXFLAGS= -L$(LIB) -larmadillo -lfftw3 -ljson_spirit -lpthread #-lboost_system -lboost_thread#-lomp
 
 PROG=PiTon
 

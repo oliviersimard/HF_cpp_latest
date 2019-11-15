@@ -10,8 +10,20 @@ std::complex<double> Susceptibility::gamma_oneD_spsp_full_lower(Hubbard::Functor
         }
     }
     lower_level *= SPINDEG*Gk._u/(Gk._beta*(Gk._Nk)); /// No minus sign at ground level. Factor 2 for spin.
-    //std::cout << "Lowest level (kbar): " << Gk._u/(1.0+lower_level) << "\n";
-    //std::cout << "Nk: " << Gk._Nk << " " << Gk._beta << " " << Gk._u << "\n";
+    lower_level += 1.0;
+    return Gk._u/lower_level; // Means that we have to multiply the middle level of this component by the two missing Green's functions.
+}
+
+std::complex<double> Susceptibility::gamma_twoD_spsp_full_lower(Hubbard::FunctorBuildGk& Gk,double kpx,double kpy,double kbarx,double kbary,std::complex<double> iknp,std::complex<double> wbar) const{
+    std::complex<double> lower_level=0.0+0.0*im;
+    for (size_t iknpp=0; iknpp<Gk._size; iknpp++){
+        for (size_t kppx=0; kppx<Gk._kArr_l.size(); kppx++){
+            for (size_t kppy=0; kppy<Gk._kArr_l.size(); kppy++){
+                lower_level += Gk(Gk._precomp_wn[iknpp]+iknp-wbar,Gk._kArr_l[kppx]+kpx-kbarx,Gk._kArr_l[kppy]+kpy-kbary)(0,0)*Gk(Gk._precomp_wn[iknpp],Gk._kArr_l[kppx],Gk._kArr_l[kppy])(1,1);
+            }
+        }
+    }
+    lower_level *= SPINDEG*Gk._u/(Gk._beta*(Gk._Nk)*(Gk._Nk)); /// No minus sign at ground level. Factor 2 for spin.
     lower_level += 1.0;
     return Gk._u/lower_level; // Means that we have to multiply the middle level of this component by the two missing Green's functions.
 }
@@ -39,6 +51,58 @@ std::tuple< std::complex<double>,std::complex<double>,std::complex<double> > Sus
     middle_level+=1.0;
     return std::make_tuple(Gk._u/middle_level,middle_level_inf,middle_level_corr);
 }
+
+std::tuple< std::complex<double>,std::complex<double>,std::complex<double> > Susceptibility::gamma_twoD_spsp_full_middle_plotting(Hubbard::FunctorBuildGk& Gk,double kbarx_m_tildex,double kbary_m_tildey,std::complex<double> wbar,std::complex<double> wtilde,Hubbard::K_2D q) const{
+/* Uses gamma_oneD_spsp to compute the infinite-ladder-down part and gamma_oneD_spsp_lower to compute corrections stemming from infinite delta G/delta phi. */    
+    std::complex<double> middle_level=0.0+0.0*im,middle_level_inf=0.0+0.0*im,middle_level_corr=0.0+0.0*im;
+    for (size_t kpx=0; kpx<Gk._kArr_l.size(); kpx++){
+        std::cout << "kpx: " << kpx << std::endl;
+        for (size_t kpy=0; kpy<Gk._kArr_l.size(); kpy++){
+            std::cout << "kpy: " << kpy << std::endl;
+            for (size_t iknp=0; iknp<Gk._size; iknp++){
+                for (size_t ktildex=0; ktildex<Gk._kArr_l.size(); ktildex++){
+                    double kbarx = Gk._kArr_l[ktildex] - kbarx_m_tildex;
+                    for (size_t ktildey=0; ktildey<Gk._kArr_l.size(); ktildey++){
+                        double kbary = Gk._kArr_l[ktildey] - kbary_m_tildey;
+                        middle_level_inf += Gk(Gk._precomp_wn[iknp],Gk._kArr_l[kpx],Gk._kArr_l[kpy]
+                        )(0,0) * gamma_twoD_spsp_full_lower(Gk,Gk._kArr_l[kpx],Gk._kArr_l[kpy],kbarx,kbary,Gk._precomp_wn[iknp],wbar
+                        ) * Gk(Gk._precomp_wn[iknp]-q._iwn,Gk._kArr_l[kpx]-q._qx,Gk._kArr_l[kpy]-q._qy
+                        )(0,0);
+                    }
+                }
+                middle_level_inf*=1.0/Gk._Nk/Gk._Nk;
+            }
+        }
+    }
+    middle_level_inf*=(SPINDEG/((Gk._Nk)*(Gk._Nk)*Gk._beta)); // Factor 2 for spin.
+    middle_level_corr+=middle_level_inf;
+    middle_level_inf+=gamma_twoD_spsp(Gk,kbarx_m_tildex,kbary_m_tildey,wtilde,wbar);
+    middle_level-=middle_level_inf;
+    middle_level+=1.0;
+    return std::make_tuple(Gk._u/middle_level,middle_level_inf,middle_level_corr);
+}
+
+std::tuple< std::complex<double>,std::complex<double>,std::complex<double> > Susceptibility::gamma_oneD_jj_full_middle_plotting(Hubbard::FunctorBuildGk& Gk,double kbar,double ktilde,std::complex<double> wbar,std::complex<double> wtilde,Hubbard::K_1D q) const{
+/* Uses gamma_oneD_spsp to compute the infinite-ladder-down part and gamma_oneD_spsp_lower to compute corrections stemming from infinite delta G/delta phi. */    
+    std::complex<double> middle_level=0.0+0.0*im,middle_level_inf=0.0+0.0*im,middle_level_corr=0.0+0.0*im;
+    for (size_t kp=0; kp<Gk._kArr_l.size(); kp++){
+        for (size_t iknp=0; iknp<Gk._size; iknp++){
+            middle_level_inf += Gk(Gk._precomp_wn[iknp],Gk._kArr_l[kp]
+            )(0,0) * gamma_oneD_spsp_full_lower(Gk,Gk._kArr_l[kp],kbar,Gk._precomp_wn[iknp],wbar
+            ) * Gk(Gk._precomp_wn[iknp]-q._iwn,Gk._kArr_l[kp]-q._qx
+            )(0,0);
+
+        }
+    }
+    middle_level_inf*=(SPINDEG/((Gk._Nk)*Gk._beta)); // Factor 2 for spin.
+    middle_level_corr+=middle_level_inf;
+    middle_level_inf+=gamma_oneD_spsp(Gk,ktilde,wtilde,kbar,wbar);
+    middle_level-=middle_level_inf;
+    middle_level+=1.0;
+    return std::make_tuple( -1.0*(-2.0*std::sin(ktilde))*Gk._u/middle_level*(-2.0*std::sin(kbar)), middle_level_inf, middle_level_corr );
+}
+
+
 
 // std::complex<double> Susceptibility::chisp_full(Hubbard::FunctorBuildGk& Gk,Hubbard::K_1D q) const{
 //     std::complex<double> upper_level=0.0+0.0*im;
@@ -127,18 +191,17 @@ std::tuple< std::complex<double>,std::complex<double> > Susceptibility::gamma_on
     return std::make_tuple(Gk._u/lower_level,chi_bubble);
 }
 
-std::complex<double> Susceptibility::gamma_twoD_spsp(Hubbard::FunctorBuildGk& Gk,double ktildex,double ktildey,std::complex<double> wtilde,double kbarx,double kbary,std::complex<double> wbar,Hubbard::K_2D q) const{ // q's contain bosonic Matsubara frequencies.
+std::complex<double> Susceptibility::gamma_twoD_spsp(Hubbard::FunctorBuildGk& Gk,double kbarx_m_tildex,double kbary_m_tildey,std::complex<double> wtilde,std::complex<double> wbar) const{ // q's contain bosonic Matsubara frequencies.
     std::complex<double> lower_level=0.0+0.0*im;
     for (int wttilde=0; wttilde<Gk._size; wttilde++){
         for (size_t qttildey=0; qttildey<Gk._kArr_l.size(); qttildey++){
-            for (size_t qttildex=0; qttildex<Gk._kArr_l.size(); qttildex++){
-                lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktildex+q._qx-Gk._kArr_l[qttildex],ktildey+q._qy-Gk._kArr_l[qttildey])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbarx+q._qx-Gk._kArr_l[qttildex],kbary+q._qy-Gk._kArr_l[qttildey])(1,1);
+            for (size_t qttildex=0; qttildex<Gk._kArr_l.size(); qttildex++){ // the change of variable only applies to k-space, due to periodicity modulo 2pi.
+                lower_level += Gk((wtilde-Gk._precomp_qn[wttilde]),Gk._kArr_l[qttildex],Gk._kArr_l[qttildey])(0,0)*Gk((wbar-Gk._precomp_qn[wttilde]),(Gk._kArr_l[qttildex]+kbarx_m_tildex),(Gk._kArr_l[qttildey]+kbary_m_tildey))(1,1);
             }
         }
     }
     lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); /// Removed minus sign
-    lower_level += 1.0;
-    return Gk._u/lower_level;
+    return lower_level;
 }
 
 std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_oneD_spsp_plotting(Hubbard::FunctorBuildGk& Gk,double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar,Hubbard::K_1D q) const{ // q's contain bosonic Matsubara frequencies.
@@ -156,12 +219,28 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_o
     return std::make_tuple(Gk._u/lower_level,chi_bubble);
 }
 
+std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_oneD_jj_plotting(Hubbard::FunctorBuildGk& Gk,double ktilde,std::complex<double> wtilde,double kbar,std::complex<double> wbar,Hubbard::K_1D q) const{ // q's contain bosonic Matsubara frequencies.
+    std::complex<double> lower_level=0.0+0.0*im, chi_bubble=0.0+0.0*im; // chi_bubble represents the lower bubble in the vertex function, not the total vertex function.
+    for (int wttilde=0; wttilde<Gk._size; wttilde++){
+        for (size_t qttilde=0; qttilde<Gk._kArr_l.size(); qttilde++){
+            lower_level += Gk(wtilde+q._iwn-Gk._precomp_qn[wttilde],ktilde+q._qx-Gk._kArr_l[qttilde])(0,0)*Gk(wbar+q._iwn-Gk._precomp_qn[wttilde],kbar+q._qx-Gk._kArr_l[qttilde])(1,1);
+            //lower_level += Gk(-(wtilde+q._iwn-Gk._precomp_qn[wttilde]),-Gk._kArr_l[qttilde])(0,0)*Gk(-(wbar+q._iwn-Gk._precomp_qn[wttilde]),-(Gk._kArr_l[qttilde]+kbar-ktilde))(1,1);
+        }
+    }
+    lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk); //factor 2 for the spin and minus sign added
+    chi_bubble = lower_level; 
+    lower_level *= -1.0;
+    lower_level += 1.0;
+    return std::make_tuple( -1.0*(-2.0*std::sin(ktilde))*Gk._u/lower_level*(-2.0*std::sin(kbar)), chi_bubble );
+}
+
+
 std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_twoD_spsp_plotting(Hubbard::FunctorBuildGk& Gk,double kbarx_m_tildex,double kbary_m_tildey,std::complex<double> wtilde,std::complex<double> wbar) const{ // q's contain bosonic Matsubara frequencies.
     std::complex<double> lower_level=0.0+0.0*im, chi_bubble=0.0+0.0*im; // chi_bubble represents the lower bubble in the vertex function, not the total vertex function.
     for (int wttilde=0; wttilde<Gk._size; wttilde++){
         for (size_t qttildey=0; qttildey<Gk._kArr_l.size(); qttildey++){
             for (size_t qttildex=0; qttildex<Gk._kArr_l.size(); qttildex++){ // the change of variable only applies to k-space, due to periodicity modulo 2pi.
-                lower_level += Gk(-(wtilde-Gk._precomp_qn[wttilde]),-Gk._kArr_l[qttildex],-Gk._kArr_l[qttildey])(0,0)*Gk(-(wbar-Gk._precomp_qn[wttilde]),-(Gk._kArr_l[qttildex]+kbarx_m_tildex),-(Gk._kArr_l[qttildey]+kbary_m_tildey))(1,1);
+                lower_level += Gk((wtilde-Gk._precomp_qn[wttilde]),Gk._kArr_l[qttildex],Gk._kArr_l[qttildey])(0,0)*Gk((wbar-Gk._precomp_qn[wttilde]),(Gk._kArr_l[qttildex]+kbarx_m_tildex),(Gk._kArr_l[qttildey]+kbary_m_tildey))(1,1);
             }
         }
     }
@@ -170,6 +249,28 @@ std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_t
     lower_level *= -1.0;
     lower_level += 1.0;
     return std::make_tuple(Gk._u/lower_level,chi_bubble);
+}
+
+std::tuple< std::complex<double>, std::complex<double> > Susceptibility::gamma_twoD_jj_plotting(Hubbard::FunctorBuildGk& Gk,double kbarx_m_tildex,double kbary_m_tildey,std::complex<double> wtilde,std::complex<double> wbar) const{ // q's contain bosonic Matsubara frequencies.
+    std::complex<double> lower_level=0.0+0.0*im, chi_bubble=0.0+0.0*im; // chi_bubble represents the lower bubble in the vertex function, not the total vertex function.
+    for (int wttilde=0; wttilde<Gk._size; wttilde++){
+        for (size_t qttildey=0; qttildey<Gk._kArr_l.size(); qttildey++){
+            for (size_t qttildex=0; qttildex<Gk._kArr_l.size(); qttildex++){ // the change of variable only applies to k-space, due to periodicity modulo 2pi.
+                lower_level += Gk((wtilde-Gk._precomp_qn[wttilde]),Gk._kArr_l[qttildex],Gk._kArr_l[qttildey])(0,0)*Gk((wbar-Gk._precomp_qn[wttilde]),(Gk._kArr_l[qttildex]+kbarx_m_tildex),(Gk._kArr_l[qttildey]+kbary_m_tildey))(1,1);
+            }
+        }
+    }
+    lower_level *= -SPINDEG*Gk._u/(Gk._beta*Gk._Nk*Gk._Nk); //factor 2 for the spin and minus sign added
+    chi_bubble = lower_level; 
+    lower_level *= -1.0;
+    lower_level += 1.0;
+    double current_vertices=0.0;
+    for (int ktildex=0; ktildex<Gk._kArr_l.size(); ktildex++){ // Many compbinations of ktildex (y) and kbarx (y) give within [-pi,pi] give the same difference. 
+        double kbarx = Gk._kArr_l[ktildex] - kbarx_m_tildex;
+        current_vertices+=-2.0*std::sin(Gk._kArr_l[ktildex])*-2.0*std::sin(kbarx);
+    }
+    current_vertices*=1.0/Gk._Nk;
+    return std::make_tuple(-1.0*current_vertices*Gk._u/lower_level,chi_bubble);
 }
 
 #ifdef PARALLEL

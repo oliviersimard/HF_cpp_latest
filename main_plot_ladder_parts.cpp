@@ -6,11 +6,14 @@
 using namespace std;
 
 inline bool file_exists(const string&);
-void getWeights(Hubbard::FunctorBuildGk& Gk, Hubbard::K_2D qq, vector<double>& kArr_l,double beta,double Nomega,ofstream& fileObj,string& filename);
+complex<double> getWeights2D(Hubbard::FunctorBuildGk& Gk, Hubbard::K_2D& qq, vector<double>& kArr_l,double beta,int Nomega,int wtilde,int wbar,double kbarx_m_tildex,double kbary_m_tildey);
 
 arma::Mat< complex<double> > matGamma; // Matrices used in case parallel.
 arma::Mat< complex<double> > matWeigths;
 arma::Mat< complex<double> > matTotSus;
+arma::Mat< complex<double> > matCorr; // Matrices for 2D full parallelization.
+arma::Mat< complex<double> > matMidLev;
+
 
 
 #define ONED
@@ -33,18 +36,19 @@ int main(int argc, char** argv){
     const bool is_full=*(params.boo_ptr);
     //
 
+    const bool is_jj = false; // boolean for <jj> of <S_zS_z> <----------------------- include this parameter inside the json file in near future. Only when parallelizing.
     const double ndo_initial=0.6;
     const int Niterations=*(params.int_ptr+1);
     double mu=0.0;
     double ndo;
     vector< complex<double> > Gup_k(Nomega,0.0);
     vector<double> kArr(Nk+1), kArr_l(Nk+1);
-    for (int k=0; k<=Nk; k++){
+    for (int k=0; k<=Nk; k++){ // Normal 1D calculations
         kArr[k] = -1.0*M_PI/2.0 + k*2.0*M_PI/(2.0*Nk);
         kArr_l[k] = -1.0*M_PI + k*2.0*M_PI/Nk;
     }
 
-    string testStr("_serial_first_fermionic_freq_minus_lower_bubble_spin_"+to_string(static_cast<int>(SPINDEG))+""); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
+    string testStr("_parallelized_first_fermionic_freq_minus_lower_bubble_spin_"+to_string(static_cast<int>(SPINDEG))+"_curcur"); // Should be "" when not testing. Adapt it otherwise (appends at end of every filenames.)
     string frontEnd(""); // The folder in data/ containing the data.
 
     #ifdef ONED
@@ -56,6 +60,8 @@ int main(int argc, char** argv){
     matGamma = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
     matWeigths = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
     matTotSus = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
+    matCorr = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
+    matMidLev = arma::Mat< complex<double> >(kArr_l.size(),kArr_l.size(),arma::fill::zeros);
     #endif
     // Testing if the files already exist.
     if (file_exists(fileOutput)){
@@ -73,12 +79,12 @@ int main(int argc, char** argv){
         for (double u=u_init; u<=u_max; u+=u_step) {
 
             // Filenames for the file outputs of the susceptibilities chi and chi0.
-            #ifdef ONED
             string fileOutputChispspWeigths;
             string fileOutputChispspGamma;
             string fileOutputChispspGammaBubble;
             string fileOutputChispspGammaBubbleCorr;
             string fileOutputChispspTotSus;
+            #ifdef ONED
             if (!is_full){
                 fileOutputChispspWeigths = "data/"+frontEnd+"ChispspWeights_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
                 fileOutputChispspGamma = "data/"+frontEnd+"ChispspGamma_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
@@ -92,10 +98,18 @@ int main(int argc, char** argv){
                 fileOutputChispspGammaBubbleCorr = "data/"+frontEnd+"ChispspBubbleCorr_1D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
             }
             #else
-            string fileOutputChispspWeigths("data/"+frontEnd+"ChispspWeights_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
-            string fileOutputChispspGamma("data/"+frontEnd+"ChispspGamma_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
-            string fileOutputChispspGammaBubble("data/"+frontEnd+"ChispspBubble_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
-            string fileOutputChispspTotSus = "data/"+frontEnd+"ChispspTotSus_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
+            if (!is_full){
+                string fileOutputChispspWeigths("data/"+frontEnd+"ChispspWeights_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+                string fileOutputChispspGamma("data/"+frontEnd+"ChispspGamma_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+                string fileOutputChispspGammaBubble("data/"+frontEnd+"ChispspBubble_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat");
+                string fileOutputChispspTotSus = "data/"+frontEnd+"ChispspTotSus_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+".dat";
+            }
+            else{
+                fileOutputChispspWeigths = "data/"+frontEnd+"ChispspWeights_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
+                fileOutputChispspGamma = "data/"+frontEnd+"ChispspGamma_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
+                fileOutputChispspGammaBubble = "data/"+frontEnd+"ChispspBubble_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
+                fileOutputChispspGammaBubbleCorr = "data/"+frontEnd+"ChispspBubbleCorr_2D_U_"+to_string(u)+"_beta_"+to_string(beta)+"_Nomega"+to_string(Nomega)+"_Nk"+to_string(Nk)+testStr+"_full_.dat";
+            }
             #endif
 
             mu=u/2.0;
@@ -129,7 +143,7 @@ int main(int argc, char** argv){
                             int ltot=it+l; // Have to make sure spans over the whole array of k-space.
                             int lkt = static_cast<int>(floor(ltot/kArr_l.size())); // Samples the rows
                             int lkb = (ltot % kArr_l.size()); // Samples the columns
-                            thread t(ref(threadObj),lkt,lkb,beta);
+                            thread t(ref(threadObj),lkt,lkb,beta,is_jj);
                             tt[l]=move(t);
                             // tt[l]=thread(threadObj,lkt,lkb,beta);
                         }
@@ -142,7 +156,7 @@ int main(int argc, char** argv){
                             int lkt = static_cast<int>(floor(ltot/kArr_l.size()));
                             int lkb = (ltot % kArr_l.size());
                             cout << "lkt: " << lkt << " lkb: " << lkb << "\n";
-                            thread t(ref(threadObj),lkt,lkb,beta);
+                            thread t(ref(threadObj),lkt,lkb,beta,is_jj);
                             tt[l]=move(t);
                             //tt.push_back(static_cast<thread&&>(t));
                             // tt[l]=thread(threadObj,lkt,lkb,beta);
@@ -157,7 +171,7 @@ int main(int argc, char** argv){
                         int lkt = static_cast<int>(floor(ltot/kArr_l.size()));
                         int lkb = (ltot % kArr_l.size());
                         cout << "lkt: " << lkt << " lkb: " << lkb << "\n";
-                        thread t(ref(threadObj),lkt,lkb,beta);
+                        thread t(ref(threadObj),lkt,lkb,beta,is_jj);
                         tt[l]=move(t);
                         // tt[l]=thread(threadObj,lkt,lkb,beta);
                     }
@@ -197,13 +211,15 @@ int main(int argc, char** argv){
                             if ( (wtilde==0) && (wbar==0) ){ // setting some conditions for the Matsubara frequencies (lowest frequencies and weights modified (beta)). same k grid plotted!
                                 // cout << wtilde << " and wbar " << wbar << endl;
                                 if (!is_full){
-                                    gammaStuff=susObj.gamma_oneD_spsp_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
+                                    //gammaStuff=susObj.gamma_oneD_spsp_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
                                     //gammaStuff=susObj.gamma_oneD_spsp_crossed_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
+                                    gammaStuff=susObj.gamma_oneD_jj_plotting(u_ndo_c,kArr_l[ktilde],complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[kbar],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),qq);
                                     tmp_val_kt_kb += get<0>(gammaStuff);
                                     tmp_val_kt_kb_bubble += get<1>(gammaStuff);
                                 }
                                 else{
-                                    gammaStuffFull=susObj.gamma_oneD_spsp_full_middle_plotting(u_ndo_c,kArr_l[kbar],kArr_l[ktilde],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),qq);
+                                    //gammaStuffFull=susObj.gamma_oneD_spsp_full_middle_plotting(u_ndo_c,kArr_l[kbar],kArr_l[ktilde],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),qq);
+                                    gammaStuffFull=susObj.gamma_oneD_jj_full_middle_plotting(u_ndo_c,kArr_l[kbar],kArr_l[ktilde],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),qq);
                                     tmp_val_kt_kb += get<0>(gammaStuffFull);
                                     tmp_val_kt_kb_bubble += get<1>(gammaStuffFull);
                                     tmp_val_bubble_corr += get<2>(gammaStuffFull);
@@ -280,8 +296,14 @@ int main(int argc, char** argv){
                             int lkby_m_kty = static_cast<int>(floor(ltot/kArr_l.size())); // Samples the rows
                             int lkbx_m_ktx = (ltot % kArr_l.size()); // Samples the columns
                             cout << "up lkbx_m_ktx: " << lkbx_m_ktx << " up lkby_m_kty: " << lkby_m_kty << "\n";
-                            thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
-                            tt[l]=move(t);
+                            if (!is_full){
+                                thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty,is_jj);
+                                tt[l]=move(t);
+                            }
+                            else if (is_full){
+                                thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
+                                tt[l]=move(t);
+                            }
                             // tt[l]=thread(threadObj,lkt,lkb,beta);
                         }
                         threadObj.join_all(tt);
@@ -293,8 +315,14 @@ int main(int argc, char** argv){
                             int lkby_m_kty = static_cast<int>(floor(ltot/kArr_l.size()));
                             int lkbx_m_ktx = (ltot % kArr_l.size());
                             cout << "up lkbx_m_ktx: " << lkbx_m_ktx << " up lkby_m_kty: " << lkby_m_kty << "\n";
-                            thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
-                            tt[l]=move(t);
+                            if (!is_full){
+                                thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty,is_jj);
+                                tt[l]=move(t);
+                            }
+                            else if (is_full){
+                                thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
+                                tt[l]=move(t);
+                            }
                             //tt.push_back(static_cast<thread&&>(t));
                         }
                         threadObj.join_all(tt);
@@ -307,8 +335,14 @@ int main(int argc, char** argv){
                         int lkby_m_kty = static_cast<int>(floor(ltot/kArr_l.size()));
                         int lkbx_m_ktx = (ltot % kArr_l.size());
                         cout << "down lkbx_m_ktx: " << lkbx_m_ktx << " down lkby_m_kty: " << lkby_m_kty << "\n";
-                        thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
-                        tt[l]=move(t);
+                        if (!is_full){
+                            thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty,is_jj);
+                            tt[l]=move(t);
+                        }
+                        else if (is_full){
+                            thread t(ref(threadObj),lkbx_m_ktx,lkby_m_kty);
+                            tt[l]=move(t);
+                        }
                         // tt[l]=thread(threadObj,lkt,lkb,beta);
                     }
                     threadObj.join_all(tt);
@@ -316,47 +350,84 @@ int main(int argc, char** argv){
                 it+=NUM_THREADS;
             }
             outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
+            outputFileChispspGammaBubbleCorr.open(fileOutputChispspGammaBubbleCorr, ofstream::out | ofstream::app);
+            outputFileChispspGammaBubble.open(fileOutputChispspGammaBubble, ofstream::out | ofstream::app);
             for (int kbx_m_ktx=0; kbx_m_ktx<kArr_l.size(); kbx_m_ktx++){
                 for (int kby_m_kty=0; kby_m_kty<kArr_l.size(); kby_m_kty++){
                     outputFileChispspGamma << matGamma(kby_m_kty,kbx_m_ktx) << " ";
+                    outputFileChispspGammaBubbleCorr << matCorr(kby_m_kty,kbx_m_ktx) << " ";
+                    outputFileChispspGammaBubble << matMidLev(kby_m_kty,kbx_m_ktx);
                 }
                 outputFileChispspGamma << "\n";
+                outputFileChispspGammaBubbleCorr << "\n";
+                outputFileChispspGammaBubble << "\n";
             }
             outputFileChispspGamma.close();
+            outputFileChispspGammaBubbleCorr.close();
+            outputFileChispspGammaBubble.close();
             #else
             Susceptibility susObj;
             for (int kbary_m_tildey=0; kbary_m_tildey<kArr_l.size(); kbary_m_tildey++){
                 cout << "ktildey_m_bary: " << kbary_m_tildey << "\n";
                 for (int kbarx_m_tildex=0; kbarx_m_tildex<kArr_l.size(); kbarx_m_tildex++){
                     cout << "ktildex_m_barx: " << kbarx_m_tildex << "\n";
-                    complex<double> tmp_val_kt_kb(0.0,0.0), tmp_val_kt_kb_bubble(0.0,0.0);
+                    complex<double> tmp_val_kt_kb(0.0,0.0), tmp_val_kt_kb_bubble(0.0,0.0), tmp_val_weights(0.0,0.0);
+                    complex<double> tmp_val_bubble_corr(0.0,0.0);
                     for (int wtilde=0; wtilde<Gup_k.size(); wtilde++){
                         for (int wbar=0; wbar<Gup_k.size(); wbar++){
                             tuple< complex<double>, complex<double> > gammaStuff;
+                            tuple< complex<double>, complex<double>, complex<double> > gammaStuffFull;
                             if ( (wtilde==0) && (wbar==0) ){ // setting some conditions for the Matsubara frequencies (lowest frequencies and weights modified (beta)). same k grid plotted!
                                 // cout << wtilde << " and wbar " << wbar << endl;
-                                gammaStuff=susObj.gamma_twoD_spsp_plotting(u_ndo_c,kArr_l[kbarx_m_tildex],kArr_l[kbary_m_tildey],complex<double>(0.0,(2.0*(double)wtilde+1.0)*M_PI/beta),complex<double>(0.0,(2.0*(double)wbar+1.0)*M_PI/beta));
-                                tmp_val_kt_kb += get<0>(gammaStuff);
-                                tmp_val_kt_kb_bubble += get<1>(gammaStuff);
+                                if (!is_full){
+                                    gammaStuff=susObj.gamma_twoD_spsp_plotting(u_ndo_c,kArr_l[kbarx_m_tildex],kArr_l[kbary_m_tildey],complex<double>(0.0,(2.0*(double)wtilde+1.0)*M_PI/beta),complex<double>(0.0,(2.0*(double)wbar+1.0)*M_PI/beta));
+                                    //gammaStuff=susObj.gamma_twoD_jj_plotting(u_ndo_c,kArr_l[kbarx_m_tildex],kArr_l[kbary_m_tildey],complex<double>(0.0,(2.0*(double)wtilde+1.0)*M_PI/beta),complex<double>(0.0,(2.0*(double)wbar+1.0)*M_PI/beta));
+                                    tmp_val_kt_kb += get<0>(gammaStuff);
+                                    tmp_val_kt_kb_bubble += get<1>(gammaStuff);
+                                }
+                                else if (is_full){
+                                    cout << "yolo" << endl;
+                                    gammaStuffFull=susObj.gamma_twoD_spsp_full_middle_plotting(u_ndo_c,kArr_l[kbarx_m_tildex],kArr_l[kbary_m_tildey],complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),qq);
+                                    tmp_val_kt_kb += get<0>(gammaStuffFull);
+                                    tmp_val_kt_kb_bubble += get<1>(gammaStuffFull);
+                                    tmp_val_bubble_corr += get<2>(gammaStuffFull);
+                                }
                             }
+                            tmp_val_weights+=getWeights2D(u_ndo_c,qq,kArr_l,beta,Nomega,wtilde,wbar,kArr_l[kbarx_m_tildex],kArr_l[kbary_m_tildey]);
                         }
                     }
-                    // tmp_val_weigths *= 1.0/(beta)/(beta);
+                    tmp_val_weights *= 1.0/(beta)/(beta);
                     // tmp_val_kt_kb *= 1.0/(beta)/(beta);
                     // tmp_val_kt_kb_bubble *= 1.0/(beta)/(beta);
                     outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
                     outputFileChispspGammaBubble.open(fileOutputChispspGammaBubble, ofstream::out | ofstream::app);
+                    outputFileChispspWeights.open(fileOutputChispspWeigths, ofstream::out | ofstream::app);
                     outputFileChispspGamma << tmp_val_kt_kb << " ";
                     outputFileChispspGammaBubble << tmp_val_kt_kb_bubble << " ";
+                    outputFileChispspWeights << tmp_val_weights << " ";
                     outputFileChispspGamma.close();
                     outputFileChispspGammaBubble.close();
+                    outputFileChispspWeights.close();
+                    if (is_full){
+                        outputFileChispspGammaBubbleCorr.open(fileOutputChispspGammaBubbleCorr, ofstream::out | ofstream::app);
+                        outputFileChispspGammaBubbleCorr << tmp_val_bubble_corr << " ";
+                        outputFileChispspGammaBubbleCorr.close();
+                    }
                 }
                 outputFileChispspGamma.open(fileOutputChispspGamma, ofstream::out | ofstream::app);
                 outputFileChispspGammaBubble.open(fileOutputChispspGammaBubble, ofstream::out | ofstream::app);
+                outputFileChispspWeights.open(fileOutputChispspWeigths, ofstream::out | ofstream::app);
                 outputFileChispspGamma << "\n";
                 outputFileChispspGammaBubble << "\n";
+                outputFileChispspWeights << "\n";
                 outputFileChispspGamma.close();
                 outputFileChispspGammaBubble.close();
+                outputFileChispspWeights.close();
+                if (is_full){
+                    outputFileChispspGammaBubbleCorr.open(fileOutputChispspGammaBubbleCorr, ofstream::out | ofstream::app);
+                    outputFileChispspGammaBubbleCorr << "\n";
+                    outputFileChispspGammaBubbleCorr.close();
+                }
             }
             #endif /* End of 2D PARALLEL preprocessing */
 
@@ -380,35 +451,25 @@ inline bool file_exists (const string& filename) {
   return (stat(filename.c_str(), &buffer) == 0); 
 }
 
-void getWeights(Hubbard::FunctorBuildGk& Gk, Hubbard::K_2D qq, vector<double>& kArr_l, double beta, double Nomega, ofstream&outputFileChispspWeights, string& fileOutputChispspWeigths){
+complex<double> getWeights2D(Hubbard::FunctorBuildGk& Gk,Hubbard::K_2D& qq,vector<double>& kArr_l,double beta,int Nomega,int wtilde,int wbar,double kbarx_m_tildex,double kbary_m_tildey){
+    complex<double> tmp_val_weigths(0.0,0.0);
     for (int ktildey=0; ktildey<kArr_l.size(); ktildey++){
-        for (int kbary=0; kbary<kArr_l.size(); kbary++){
-            for (int ktildex=0; ktildex<kArr_l.size(); ktildex++){
-                for (int kbarx=0; kbarx<kArr_l.size(); kbarx++){
-                    complex<double> tmp_val_weigths(0.0,0.0);
-                    for (int wtilde=0; wtilde<Nomega; wtilde++){
-                        for (int wbar=0; wbar<Nomega; wbar++){
-                            if ( (wtilde==0) || (wbar==0) ){
-                                tmp_val_weigths += Gk(
-                                    complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[ktildex],kArr_l[ktildey]
-                                    )(0,0)*Gk(
-                                    complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta)+qq._iwn,kArr_l[ktildex]+qq._qx,kArr_l[ktildey]+qq._qy
-                                    )(0,0)*Gk(
-                                    complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta)+qq._iwn,kArr_l[kbarx]+qq._qx,kArr_l[kbary]+qq._qy
-                                    )(1,1)*Gk(
-                                    complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),kArr_l[kbarx],kArr_l[kbary]
-                                    )(1,1);
-                            }
-                        }
-                    }
-                    outputFileChispspWeights.open(fileOutputChispspWeigths, ofstream::out | ofstream::app);
-                    outputFileChispspWeights << tmp_val_weigths << " ";
-                    outputFileChispspWeights.close();
-                }
-            }
+        double kbary = kArr_l[ktildey] - kbary_m_tildey;
+        for (int ktildex=0; ktildex<kArr_l.size(); ktildex++){
+            double kbarx = kArr_l[ktildex] - kbarx_m_tildex;
+            tmp_val_weigths += Gk(
+                complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta),kArr_l[ktildex],kArr_l[ktildey]
+                )(0,0)*Gk(
+                complex<double>(0.0,(2.0*wtilde+1.0)*M_PI/beta)+qq._iwn,kArr_l[ktildex]+qq._qx,kArr_l[ktildey]+qq._qy
+                )(0,0)*Gk(
+                complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta)+qq._iwn,kbarx+qq._qx,kbary+qq._qy
+                )(1,1)*Gk(
+                complex<double>(0.0,(2.0*wbar+1.0)*M_PI/beta),kbarx,kbary
+                )(1,1);
+                
         }
+            
     }
-    outputFileChispspWeights.open(fileOutputChispspWeigths, ofstream::out | ofstream::app);
-    outputFileChispspWeights << "\n";
-    outputFileChispspWeights.close();
+    tmp_val_weigths*=1.0/kArr_l.size()/kArr_l.size();
+    return tmp_val_weigths;
 }
